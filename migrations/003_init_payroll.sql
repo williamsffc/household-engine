@@ -1,0 +1,1 @@
+-- Placeholder (Phase 3+): payroll schema migration

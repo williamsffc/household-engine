@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">Overview</h1>
+  <div class="page-subtitle">Local-only household command center</div>
+</header>
+
+<section class="grid grid--cards">
+  <div class="card">
+    <div class="card__label">This month income (approved payroll)</div>
+    <div class="card__value" id="card-income">$0.00</div>
+    <div class="card__hint" id="card-income-hint">No approved payroll yet</div>
+  </div>
+
+  <div class="card">
+    <div class="card__label">This month expenses</div>
+    <div class="card__value" id="card-expenses">$0.00</div>
+  </div>
+
+  <div class="card">
+    <div class="card__label">Net cashflow</div>
+    <div class="card__value" id="card-net">$0.00</div>
+  </div>
+
+  <div class="card">
+    <div class="card__label">Pending review</div>
+    <div class="card__value" id="card-pending">0</div>
+    <div class="card__hint">Documents in <code>in_review</code></div>
+  </div>
+</section>
+
+<section class="grid grid--two">
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Cashflow trend</div>
+      <div class="panel__meta" id="cashflow-meta"></div>
+    </div>
+    <canvas id="cashflow-chart" height="120"></canvas>
+    <div class="panel__empty" id="cashflow-empty" style="display:none;">No cashflow data yet.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Recent documents</div>
+    </div>
+    <div class="table" id="recent-docs"></div>
+  </div>
+</section>
+
+<section class="grid grid--one">
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Pending review</div>
+    </div>
+    <div class="table" id="pending-review"></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/vendor/chart.min.js"></script>
+<script src="/static/js/overview.js"></script>
+{% endblock %}

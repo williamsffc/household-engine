@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">Review Queue</h1>
+  <div class="page-subtitle">Review extracted payroll drafts (approval workflow not implemented yet)</div>
+</header>
+
+<section class="grid grid--two">
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Pending items</div>
+      <div class="panel__meta" id="rq-meta"></div>
+    </div>
+    <div class="table" id="rq-list"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Selected item</div>
+      <div class="panel__meta" id="rq-detail-meta"></div>
+    </div>
+    <div id="rq-detail" class="table"></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/review_queue.js"></script>
+{% endblock %}

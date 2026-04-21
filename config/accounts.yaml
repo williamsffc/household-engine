@@ -1,0 +1,57 @@
+accounts:
+  - nickname: "Amex Gold"
+    type: credit_card
+    format: mixed
+    parser: amex
+    currency: USD
+    file_pattern:
+      - "*gold*.csv"
+      - "*gold*.xlsx"
+      - "*gold*.xls"
+    date_format: "%m/%d/%Y"
+    signature_columns:
+      - Date
+      - Description
+      - Card Member
+      - Amount
+      - Appears On Your Statement As
+      - Category
+    drop_columns:
+      - Card Member
+      - Appears On Your Statement As
+
+  - nickname: "Amex Biz"
+    type: credit_card
+    format: mixed
+    parser: amex
+    currency: USD
+    file_pattern:
+      - "*biz*.csv"
+      - "*biz*.xlsx"
+      - "*biz*.xls"
+    date_format: "%m/%d/%Y"
+    signature_columns:
+      - Date
+      - Description
+      - Card Member
+      - Amount
+      - Appears On Your Statement As
+      - Category
+    drop_columns:
+      - Card Member
+      - Appears On Your Statement As
+
+  - nickname: "Chase Sapphire"
+    type: credit_card
+    format: csv
+    parser: chase
+    currency: USD
+    file_pattern:
+      - "*chase*.csv"
+      - "*sapphire*.csv"
+    date_format: "%m/%d/%Y"
+    signature_columns:
+      - Transaction Date
+      - Description
+      - Amount
+      - Category

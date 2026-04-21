@@ -1,0 +1,217 @@
+/* Minimal UI shell for Step 8 (local-first) */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji",
+    "Segoe UI Emoji";
+  color: #0f172a;
+  background: #0b1220;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  min-height: 100%;
+}
+
+.sidebar {
+  background: #0a1020;
+  border-right: 1px solid rgba(148, 163, 184, 0.12);
+  padding: 18px 14px;
+}
+
+.sidebar__title {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: #e2e8f0;
+  margin-bottom: 14px;
+}
+
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sidebar__link {
+  color: #cbd5e1;
+  text-decoration: none;
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.sidebar__link:hover {
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.sidebar__link--active {
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.24);
+  color: #e0f2fe;
+}
+
+.main {
+  padding: 22px 22px 40px;
+  background: radial-gradient(1200px 500px at 20% 0%, rgba(56, 189, 248, 0.16), transparent),
+    radial-gradient(900px 420px at 90% 0%, rgba(167, 139, 250, 0.12), transparent);
+}
+
+.page-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.page-title {
+  margin: 0;
+  color: #e2e8f0;
+  font-size: 22px;
+}
+
+.page-subtitle {
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+}
+
+.grid--cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.grid--two {
+  grid-template-columns: 1.4fr 1fr;
+  margin-bottom: 14px;
+}
+
+.grid--one {
+  grid-template-columns: 1fr;
+}
+
+.card,
+.panel {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28);
+}
+
+.card__label {
+  color: #94a3b8;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.card__value {
+  color: #e2e8f0;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.card__hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #93c5fd;
+}
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.panel__title {
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.panel__meta {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.panel__empty {
+  color: #94a3b8;
+  font-size: 13px;
+  padding: 10px 0;
+}
+
+.table {
+  display: grid;
+  gap: 8px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  background: rgba(2, 6, 23, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.row__left {
+  display: grid;
+  gap: 2px;
+}
+
+.row__title {
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.row__subtitle {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.pill {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #cbd5e1;
+  align-self: start;
+}
+
+.pill--review {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.25);
+  color: #fde68a;
+}
+
+code {
+  color: #a7f3d0;
+}
+
+@media (max-width: 1100px) {
+  .grid--cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .grid--two {
+    grid-template-columns: 1fr;
+  }
+  .app {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    display: none;
+  }
+}

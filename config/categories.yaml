@@ -1,0 +1,67 @@
+mapping:
+  Restaurant-Restaurant:
+    - Dining
+    - Restaurant
+  "Restaurant-Bar & Cafe":
+    - Dining
+    - "Bar & Cafe"
+  "Restaurant-Bar & CafÃ©": # Mangled alias (Ã©)
+    - Dining
+    - "Bar & Cafe"
+  Merchandise & Supplies-Groceries:
+    - Groceries
+    - Groceries
+  Merchandise & Supplies-Clothing Stores:
+    - Shopping
+    - Clothing
+  Merchandise & Supplies-Florists & Garden:
+    - Shopping
+    - Florists & Garden
+  Merchandise & Supplies-Arts & Jewelry:
+    - Shopping
+    - Arts & Jewelry
+  Merchandise & Supplies-Sporting Goods Stores:
+    - Shopping
+    - Sporting Goods
+  Merchandise & Supplies-Pharmacies:
+    - Health & Pharmacy
+    - Pharmacy
+  Business Services-Health Care Services:
+    - Healthcare
+    - Healthcare
+  Business Services-Other Services:
+    - Services
+    - Other Services
+  Transportation-Fuel:
+    - Transportation
+    - Fuel
+  Other-Charities:
+    - Giving
+    - Charities
+  Other-Miscellaneous:
+    - Other
+    - Miscellaneous
+  Fees & Adjustments-Fees & Adjustments:
+    - Fees & Credits
+    - Fees & Adjustments
+
+merchant_overrides:
+  UBER:
+    - Transportation
+    - Ride Share
+  LYFT:
+    - Transportation
+    - Ride Share
+  NETFLIX:
+    - Subscriptions
+    - Entertainment
+  SPOTIFY:
+    - Subscriptions
+    - Entertainment
+  Rob Cuts:
+    - Services
+    - ""
+
+default_category: Other
+payment_category: Credit Card Payment
+payment_subcategory: Transfer

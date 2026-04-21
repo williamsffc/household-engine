@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Household Engine</title>
+    <link rel="stylesheet" href="/static/css/app.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="sidebar__title">Household Engine</div>
+        <nav class="sidebar__nav">
+          {# lightweight active highlighting #}
+          <a class="sidebar__link {% if request and request.url.path == '/' %}sidebar__link--active{% endif %}" href="/">Overview</a>
+          <a class="sidebar__link {% if request and request.url.path.startswith('/expenses') %}sidebar__link--active{% endif %}" href="/expenses">Expenses</a>
+          <a class="sidebar__link {% if request and request.url.path.startswith('/review-queue') %}sidebar__link--active{% endif %}" href="/review-queue">Review Queue</a>
+        </nav>
+      </aside>
+      <main class="main">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

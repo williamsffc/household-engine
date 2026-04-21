@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">Expenses</h1>
+  <div class="page-subtitle">Monthly trends, categories, and recent activity</div>
+</header>
+
+<section class="grid grid--cards">
+  <div class="card">
+    <div class="card__label">This month expenses</div>
+    <div class="card__value" id="exp-card-month-total">$0.00</div>
+  </div>
+  <div class="card">
+    <div class="card__label">Transactions this month</div>
+    <div class="card__value" id="exp-card-month-count">0</div>
+  </div>
+  <div class="card">
+    <div class="card__label">Top category (month)</div>
+    <div class="card__value" id="exp-card-top-category">—</div>
+    <div class="card__hint" id="exp-card-top-category-hint"></div>
+  </div>
+  <div class="card">
+    <div class="card__label">Recent activity</div>
+    <div class="card__value" id="exp-card-recent-count">0</div>
+    <div class="card__hint">Last 25 rows</div>
+  </div>
+</section>
+
+<section class="grid grid--two">
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Monthly expense trend</div>
+      <div class="panel__meta" id="exp-monthly-meta"></div>
+    </div>
+    <canvas id="exp-monthly-chart" height="120"></canvas>
+    <div class="panel__empty" id="exp-monthly-empty" style="display:none;">No monthly expense data yet.</div>
+  </div>
+
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Category breakdown</div>
+      <div class="panel__meta">Top categories by total</div>
+    </div>
+    <div class="table" id="exp-categories"></div>
+  </div>
+</section>
+
+<section class="grid grid--one">
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Recent expense activity</div>
+      <div class="panel__meta">Most recent transactions</div>
+    </div>
+    <div class="table" id="exp-recent"></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/vendor/chart.min.js"></script>
+<script src="/static/js/expenses.js"></script>
+{% endblock %}
