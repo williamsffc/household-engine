@@ -16,6 +16,19 @@ async function fetchJson(path) {
   return await res.json();
 }
 
+async function postJson(path, body) {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { Accept: "application/json", "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : "{}",
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${path} failed: ${res.status} ${text}`);
+  }
+  return await res.json();
+}
+
 function renderRows(el, rows, emptyText) {
   if (!rows || rows.length === 0) {
     el.innerHTML = `<div class="panel__empty">${emptyText}</div>`;
@@ -78,7 +91,7 @@ async function load() {
       _uploadMounted = true;
       window.HE.mountUploadSurface(uploadHost, {
         title: "Upload payroll document",
-        help: "Upload a paystub (PDF or image) to create a draft for review. Draft payroll does not affect analytics until approval exists.",
+        help: "Upload a paystub (PDF or image) to create a draft for review. Draft payroll does not affect analytics until approved.",
         moduleOwner: "payroll",
         accept: ".pdf,.png,.jpg,.jpeg",
         extraFieldsHtml: `
@@ -220,6 +233,7 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
     const grossPay = paystub.gross_pay != null ? escapeHtml(String(paystub.gross_pay)) : "—";
     const memberId = paystub.member_id != null ? escapeHtml(String(paystub.member_id)) : "—";
     const lines = Array.isArray(review.draft_lines) ? review.draft_lines : [];
+    const canDecide = String(doc.status) === "in_review" && String(paystub.status) === "draft";
 
     detailEl.innerHTML = `
       <div class="row">
@@ -229,6 +243,25 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
         </div>
         <div class="pill pill--review">${escapeHtml(doc.status)}</div>
       </div>
+
+      ${
+        canDecide
+          ? `
+            <div class="row" style="grid-template-columns: 1fr;">
+              <div class="row__left">
+                <div class="row__title">Decision</div>
+                <div class="row__subtitle" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">
+                  <button class="icon-button icon-button--primary" id="rq-approve">Approve</button>
+                  <button class="icon-button icon-button--danger" id="rq-reject">Reject</button>
+                  <span style="color:var(--color-text-muted);">Draft payroll does not affect analytics until approved.</span>
+                </div>
+              </div>
+            </div>
+          `
+          : `
+            <div class="panel__empty">This item is not eligible for approve/reject (status must be in_review + draft).</div>
+          `
+      }
 
       <div class="kv">
         <div class="kv__item">
@@ -275,6 +308,29 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
         </div>
       </div>
     `;
+
+    if (canDecide) {
+      detailEl.querySelector("#rq-approve")?.addEventListener("click", async () => {
+        try {
+          await postJson(`/api/review-queue/${documentId}/approve`, {});
+          setParam("document_id", null);
+          await load();
+        } catch (e) {
+          setBannerError(e.message || String(e));
+        }
+      });
+
+      detailEl.querySelector("#rq-reject")?.addEventListener("click", async () => {
+        const reason = window.prompt("Reject reason (optional):", "") || "";
+        try {
+          await postJson(`/api/review-queue/${documentId}/reject`, reason.trim() ? { reason: reason.trim() } : {});
+          setParam("document_id", null);
+          await load();
+        } catch (e) {
+          setBannerError(e.message || String(e));
+        }
+      });
+    }
   } catch (err) {
     renderRows(detailEl, [], `Failed to load review payload: ${escapeHtml(err.message || String(err))}`);
   }

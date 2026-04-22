@@ -219,6 +219,18 @@ body {
   border-color: var(--color-border-strong);
 }
 
+.icon-button--primary {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-text);
+}
+
+.icon-button--danger {
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-soft);
+  color: var(--color-text);
+}
+
 .icon-button:focus-visible {
   outline: 3px solid var(--color-accent-soft);
   outline-offset: 2px;

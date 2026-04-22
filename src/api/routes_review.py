@@ -5,12 +5,14 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel
 
 from src.core.database import db_connection, get_repo_root
 from src.payroll.extractor_ocr import OcrUnavailableError, ocr_image
 from src.payroll.extractor_pdf import extract_text_from_pdf
 from src.payroll.pii_scrubber import scrub_pii
 from src.payroll.repository import get_latest_paystub_for_document, list_lines_for_paystub
+from src.services.review_queue import ReviewQueueError, approve_payroll_review_item, reject_payroll_review_item
 
 
 router = APIRouter(prefix="/api/review-queue", tags=["review-queue"])
@@ -61,6 +63,10 @@ def _extract_and_scrub_redacted_text(*, storage_path: str) -> dict[str, Any]:
         "ocr_used_for_review": ocr_used,
         "source": "regenerated_on_read",
     }
+
+
+class RejectRequest(BaseModel):
+    reason: str | None = None
 
 
 @router.get("")
@@ -138,3 +144,26 @@ def get_review_payload(document_id: int) -> dict[str, Any]:
             "draft_lines": lines,
         },
     }
+
+
+@router.post("/{document_id}/approve")
+def approve_review_item(document_id: int) -> dict[str, Any]:
+    with db_connection() as conn:
+        try:
+            return approve_payroll_review_item(conn, document_id=int(document_id), actor="user")
+        except ReviewQueueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.post("/{document_id}/reject")
+def reject_review_item(document_id: int, body: RejectRequest) -> dict[str, Any]:
+    with db_connection() as conn:
+        try:
+            return reject_payroll_review_item(
+                conn,
+                document_id=int(document_id),
+                actor="user",
+                reason=(body.reason if body else None),
+            )
+        except ReviewQueueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
