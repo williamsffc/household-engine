@@ -42,8 +42,17 @@ def approve_payroll_review_item(
         raise ReviewQueueError("Member ownership mismatch between document and paystub")
 
     conn.execute(
-        "UPDATE payroll_paystubs SET status = 'approved', updated_at = CURRENT_TIMESTAMP WHERE id = ?;",
-        (int(paystub["id"]),),
+        """
+        UPDATE payroll_paystubs
+        SET
+            status = 'approved',
+            decided_at = CURRENT_TIMESTAMP,
+            decision_actor = ?,
+            rejection_reason = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?;
+        """,
+        (str(actor or "user"), int(paystub["id"])),
     )
     conn.execute(
         "UPDATE documents SET status = 'approved', updated_at = CURRENT_TIMESTAMP WHERE id = ?;",
@@ -79,8 +88,17 @@ def reject_payroll_review_item(
         raise ReviewQueueError("Member ownership mismatch between document and paystub")
 
     conn.execute(
-        "UPDATE payroll_paystubs SET status = 'rejected', updated_at = CURRENT_TIMESTAMP WHERE id = ?;",
-        (int(paystub["id"]),),
+        """
+        UPDATE payroll_paystubs
+        SET
+            status = 'rejected',
+            decided_at = CURRENT_TIMESTAMP,
+            decision_actor = ?,
+            rejection_reason = ?,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?;
+        """,
+        (str(actor or "user"), (str(reason).strip() if reason is not None and str(reason).strip() else None), int(paystub["id"])),
     )
     conn.execute(
         "UPDATE documents SET status = 'rejected', updated_at = CURRENT_TIMESTAMP WHERE id = ?;",

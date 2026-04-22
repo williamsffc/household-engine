@@ -28,10 +28,12 @@ Completed:
 * Step 14D
 * Step 14E
 * Step 15
+* Step 16
+* Step 17
 
 Current active step:
 
-* Step 16 — Dedicated Payroll page / paystub examination UI
+* Step 18 — Review artifact + payroll quality improvements
 
 ## Current status
 
@@ -41,6 +43,8 @@ Household Engine is now:
 * plus selective V2-ready hardening
 * plus UI foundation refresh completed enough to support next workflow work
 * plus canonical payroll approval workflow
+* plus dedicated Payroll page / paystub examination UI
+* plus improved household-member selection UX
 
 ## What is working now
 
@@ -75,6 +79,9 @@ Household Engine is now:
 * Review Queue UI page
 * payroll draft review payloads
 * in-app Review Queue payroll upload surface
+* household-member picker now exists for payroll upload
+* last-used payroll upload member persists locally
+* clearer ownership messaging during payroll upload
 * clearer upload hierarchy and `in_review` explanation
 * more scannable selected-item detail layout
 * calmer loading states and partial-failure behavior
@@ -83,6 +90,20 @@ Household Engine is now:
 * ownership mismatch protection exists for review decisions
 * approved payroll becomes analytics-eligible
 * rejected payroll stays out of analytics
+
+### Payroll page
+
+* dedicated Payroll page exists
+* Payroll route is wired into UI routing
+* Payroll appears in shared navigation
+* payroll list/detail browsing exists
+* payroll payloads are enriched for UI:
+  * member display name / role
+  * document status
+  * original filename
+  * uploaded timestamp
+* household-vs-per-person payroll browsing exists
+* payroll status presentation is clearer across approved / rejected / in_review
 
 ### Shared analytics / overview
 
@@ -102,7 +123,6 @@ Household Engine is now:
 * theme toggle in shared shell
 * theme preference persisted locally
 * early theme initialization to reduce flash on load
-* Overview / Expenses chart styling updated to use theme-driven variables
 * shell/theme cleanup for hover, active-row, overlay, focus-visible, callout, codeblock, and banner/error token states
 
 ### Responsive shell behavior
@@ -123,7 +143,6 @@ Household Engine is now:
 * drag-and-drop + click-to-upload supported
 * upload states include idle, drag-over, uploading, success, and error
 * current upload integration uses existing `POST /api/documents/upload`
-* Review Queue payroll upload currently uses manual `member_id` entry
 
 ## Current implemented routes
 
@@ -132,6 +151,7 @@ Household Engine is now:
 * `GET /`
 * `GET /expenses`
 * `GET /review-queue`
+* `GET /payroll`
 
 ### Overview API
 
@@ -164,6 +184,10 @@ Household Engine is now:
 * `POST /api/review-queue/{document_id}/approve`
 * `POST /api/review-queue/{document_id}/reject`
 
+### Household API
+
+* `GET /api/household/members`
+
 ## Product rule now locked in
 
 The app is **household-first**, but every payroll record belongs to exactly **one household member**.
@@ -180,24 +204,17 @@ This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
-### Payroll page / exploration UX
+### Review artifact / payroll quality
 
-* no dedicated Payroll page / paystub examination UI yet
-* household-vs-person payroll exploration is not yet surfaced in a dedicated page
-* payroll browsing across statuses is not yet first-class in UI
-* member selection UX is still basic/manual during payroll upload
+* persisted review artifacts are still limited
+* rejection reason is stored in audit log only
+* payroll line detail can still be sparse
+* scanned-PDF/OCR robustness still needs improvement
+* extraction quality still has room to improve
 
-### Review queue / artifact persistence
+### Review queue / lifecycle refinements
 
 * no reopen/undo workflow yet for approve/reject
-* no persisted redacted review artifact yet
-* rejection reason is stored in audit log only
-
-### Payroll quality / later enhancements
-
-* no robust scanned-PDF OCR yet
-* no strong payroll line-item extraction yet
-* no dedicated member-selection picker UX yet
 
 ### Portfolio / later V2
 
@@ -217,16 +234,14 @@ This is the intended model for Person-M and Person-W going forward.
 
 Proceed with:
 
-* Step 16 — Dedicated Payroll page / paystub examination UI
+* Step 18 — Review artifact + payroll quality improvements
 
 Then:
 
-* Step 17 — Better household-member selection UX
-* Step 18 — Review artifact + payroll quality improvements
 * Step 19 — Portfolio UI and richer household planning
 
 ## Important current truth
 
-The biggest remaining functional payroll gap is no longer approval/canonicalization — that now exists.
+The member-aware payroll model, approval workflow, and Payroll page now exist.
 
-The next best move is to build a dedicated Payroll page that exposes payroll history and examination cleanly, while staying aligned with the locked-in household-first, member-aware model.
+The next best move is to improve the quality and durability of payroll review artifacts and payroll extraction outputs, so the payroll system becomes more trustworthy in day-to-day use.

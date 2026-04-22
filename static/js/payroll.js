@@ -212,6 +212,19 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
         <div class="pill ${pillClass(effective)}">${escapeHtml(effective)}</div>
       </div>
 
+      ${
+        effective === "rejected" && p.rejection_reason
+          ? `
+            <div class="row" style="grid-template-columns: 1fr;">
+              <div class="row__left">
+                <div class="row__title">Rejection reason</div>
+                <div class="row__subtitle">${escapeHtml(String(p.rejection_reason))}</div>
+              </div>
+            </div>
+          `
+          : ``
+      }
+
       <div class="kv">
         <div class="kv__item">
           <div class="kv__label">Pay date</div>

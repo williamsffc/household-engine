@@ -1,15 +1,17 @@
-# Step 16 — Dedicated Payroll Page / Paystub Examination UI
+# Step 18 — Review Artifact + Payroll Quality Improvements
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 15 and is now best described as:
+Household Engine is complete through Step 17 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
 * plus post-roadmap UI foundation refresh
 * plus canonical payroll approval workflow
+* plus dedicated Payroll page / paystub examination UI
+* plus better household-member selection UX
 
 The app currently has:
 
@@ -17,13 +19,15 @@ The app currently has:
 * working Expenses ingest, analytics, and UI
 * working Payroll draft ingest, payroll APIs, and review queue backend/UI
 * shared cashflow analytics, trends, forecast, and portfolio summary endpoints
-* Overview, Expenses, and Review Queue UI pages
+* Overview, Expenses, Review Queue, and Payroll UI pages
 * shared shell/theme foundation
 * responsive shared navigation
 * shared in-app upload component
 * Expenses UX refresh
 * Review Queue UX refresh
 * payroll approve/reject + canonical approval flow
+* dedicated Payroll page with household-vs-person browsing
+* improved member picker UX for payroll upload
 
 ## Step 14A–14E status
 
@@ -48,11 +52,39 @@ Delivered:
 * coherent state transitions across:
   * `documents.status`
   * `payroll_paystubs.status`
-* member ownership enforcement:
-  * payroll record belongs to exactly one household member
+* member ownership enforcement
 * approved-only payroll analytics preserved
 * rejected payroll excluded from analytics
-* Review Queue UI actions for approve/reject
+
+## Step 16 status
+
+Completed enough.
+
+Delivered:
+
+* dedicated Payroll page
+* Payroll nav entry + UI route
+* payroll list/detail browse UI
+* enriched payroll list/detail payloads for UI
+* status clarity across:
+  * approved
+  * rejected
+  * in_review
+* household-vs-per-person payroll browsing
+* clearer member ownership display
+
+## Step 17 status
+
+Completed enough.
+
+Delivered:
+
+* household-member picker for payroll upload in Review Queue
+* active members loaded from household API
+* last-used member selection persisted locally
+* single-member auto-select behavior
+* clearer upload ownership messaging
+* reduced risk from raw/manual member_id entry
 
 ## Product rule now locked in
 
@@ -65,130 +97,103 @@ That means:
   * per person
   * household combined
 * household totals are the rollup of approved per-member payroll
-* the UI should support later views such as:
-  * Household
-  * Person-M
-  * Person-W
+* upload/review/approval flow must preserve ownership truthfully
 
-## Goal of Step 16
+## Goal of Step 18
 
-Build the dedicated Payroll page / paystub examination UI.
+Improve the quality, durability, and usefulness of payroll review artifacts and payroll extraction outputs without broadening into a major redesign.
 
-This page should become the main place for browsing payroll history and examining payroll records, while the Review Queue remains focused on draft/in_review review work.
+This step is about making the review/examination pipeline more trustworthy and useful over time.
 
 ## Product intent
 
-The Payroll page should make it easy to understand:
+Right now the payroll workflow exists and is usable, but some quality-oriented pieces are still thin:
 
-* what payroll records exist
-* which are approved vs draft vs rejected
-* which household member a record belongs to
-* how to view household-combined payroll vs per-person payroll
-* how to inspect a specific paystub in a cleaner payroll-focused UI
+* review artifacts are mostly transient/read-through payloads
+* rejection reasons live only in audit log details
+* payroll lines can be sparse
+* scanned-PDF/OCR robustness is still limited
+* extraction quality can still be improved
 
-This should feel like a first-class product page, not just an API dump.
+This step should improve the practical reliability of payroll handling while staying incremental.
 
 ## Required outcome
 
-Build a dedicated Payroll page that supports:
+Improve payroll review artifact and payroll quality behavior with focus on:
 
-1. a Payroll navigation entry/page
-2. payroll list / browsing experience
-3. clear member ownership display
-4. status visibility:
-   * approved
-   * draft / in_review
-   * rejected
-5. a clean paystub examination/detail view
-6. ability to think in both:
-   * household-combined terms
-   * per-person terms
-7. better payroll-focused readability than the Review Queue page
+1. better persisted review artifact support where practical
+2. stronger payroll detail capture/readability where practical
+3. improved payroll extraction quality or fallback robustness
+4. better traceability of review outcomes where practical
+5. no regression to approval/canonical workflow
+6. no regression to household-member ownership model
 
 ## Scope guidance
 
-This step should build the Payroll page, but should not turn into a broad redesign or advanced analytics project.
+This is a quality-improvement step, not a broad architecture rewrite.
 
 That means:
 
-* add the dedicated Payroll page
-* support browsing/examining payroll records
-* support member-aware filtering or grouping if practical
-* keep the implementation modest and aligned with the current codebase
-* do not build advanced portfolio logic here
-* do not broaden into major OCR/parser work
-* do not add a reopen/undo workflow yet unless a very small improvement is needed
+* improve what happens around payroll review artifacts and extraction quality
+* make small, high-value persistence/traceability improvements if practical
+* improve payroll quality where the current implementation is thin
+* keep the implementation incremental and aligned with the current repo
+* do not broaden into portfolio work
+* do not redesign the whole app
+* do not start advanced auth/settings systems
 
 ## Suggested focus areas
 
-### Payroll page structure
+### Review artifact persistence
 
-The page should likely answer:
+Today some review information is available only transiently or indirectly.
 
-* what payroll records exist right now
-* who they belong to
-* what their status is
-* what details matter most for examination
+Consider modest improvements such as:
 
-### Household vs person view
+* preserving rejection reason more explicitly if practical
+* preserving useful review payload details more durably if practical
+* improving traceability of what was reviewed/approved/rejected
 
-The page should start supporting the product model:
+### Payroll detail quality
 
-* household-first overall
-* per-person payroll beneath that
+Improve practical payroll usefulness where current outputs are thin:
 
-This could be expressed through:
-* filters
-* segmented view
-* grouped list
-* tabs
-* or another modest pattern that fits the current codebase
+* better payroll line handling if low-risk
+* clearer draft/approved detail completeness
+* small improvements to extraction robustness
 
-### Paystub detail / examination
+### OCR / scanned-document fallback quality
 
-The detail area should make it easy to inspect:
+If there is a modest improvement that increases scanned-paystub resilience without sprawling, this is a good place for it.
 
-* pay date
-* period
-* gross pay
-* net pay
-* member
-* status
-* key payroll lines
-* source/review linkage if useful
+### Review/payload honesty
 
-### Relationship to Review Queue
-
-Review Queue should remain focused on draft review work.
-
-The Payroll page should become the cleaner destination for payroll browsing and examination across statuses.
+The system should remain honest about what is known vs inferred vs missing.
 
 ## Files likely involved
 
 Review first:
 
-* `src/templates/base.html`
-* `src/templates/payroll.html` if already present or create it if needed
-* `src/api/routes_ui.py`
-* `src/api/routes_payroll.py`
+* `src/payroll/ingest.py`
+* `src/payroll/extractor_pdf.py`
+* `src/payroll/extractor_ocr.py`
+* `src/payroll/repository.py`
+* `src/services/review_queue.py`
+* `src/api/routes_review.py`
+* migrations / schema files if modest persistence changes are needed
+* `src/templates/review_queue.html`
+* `src/templates/payroll.html`
+* `static/js/review_queue.js`
 * `static/js/payroll.js`
-* `static/css/app.css`
-
-Also inspect:
-
-* current payroll list/detail endpoints
-* any existing templates or placeholder payroll route/page wiring
 
 ## Deliverables for this step
 
-1. dedicated Payroll page
-2. payroll route added to shared navigation
-3. payroll list/browse UI
-4. payroll detail/examination UI
-5. member ownership shown clearly
-6. status shown clearly
-7. modest household-vs-person support in the page model
-8. no regression to existing shell/upload/Expenses/Review Queue foundations
+1. improved payroll review artifact handling and/or persistence
+2. improved payroll quality/reliability in at least one high-value area
+3. better traceability of review outcomes where practical
+4. no regression to approval/canonical workflow
+5. no regression to member ownership semantics
+6. no regression to current Review Queue / Payroll page UX
 
 ## Constraints
 
@@ -196,13 +201,12 @@ Also inspect:
 * no framework migration
 * no Tailwind rewrite
 * no unrelated global redesign
-* no advanced payroll forecasting expansion here
-* keep the system local-first and honest about status/state
+* no portfolio work yet
+* no advanced auth/settings system yet
+* keep the system local-first and honest about data quality/state
 
-## What comes next after Step 16
+## What comes next after Step 18
 
-If Step 16 lands cleanly, the next roadmap order becomes:
+If Step 18 lands cleanly, the next roadmap order becomes:
 
-* Step 17 — Better household-member selection UX
-* Step 18 — Review artifact + payroll quality improvements
 * Step 19 — Portfolio UI and richer household planning

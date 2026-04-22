@@ -12,6 +12,7 @@ from src.payroll.extractor_ocr import OcrUnavailableError, ocr_image
 from src.payroll.extractor_pdf import extract_text_from_pdf
 from src.payroll.pii_scrubber import scrub_pii
 from src.payroll.repository import get_latest_paystub_for_document, list_lines_for_paystub
+from src.payroll.review_artifacts import get_review_artifact_for_document, upsert_review_artifact
 from src.services.review_queue import ReviewQueueError, approve_payroll_review_item, reject_payroll_review_item
 
 
@@ -101,19 +102,38 @@ def get_review_payload(document_id: int) -> dict[str, Any]:
         if str(doc_dict.get("status")) != "in_review":
             raise HTTPException(status_code=400, detail="Document is not in_review")
 
-    module_owner = str(doc_dict.get("module_owner") or "")
-    if module_owner != "payroll":
-        raise HTTPException(status_code=400, detail="Review payload not implemented for this module_owner yet")
+        module_owner = str(doc_dict.get("module_owner") or "")
+        if module_owner != "payroll":
+            raise HTTPException(status_code=400, detail="Review payload not implemented for this module_owner yet")
 
-    # Redacted text: regenerated on-demand (no persistence yet).
-    redacted = _extract_and_scrub_redacted_text(storage_path=str(doc_dict["storage_path"]))
-
-    with db_connection() as conn:
         paystub = get_latest_paystub_for_document(conn, int(document_id))
         if paystub is None:
             raise HTTPException(status_code=404, detail="No payroll paystub found for document")
 
         lines = list_lines_for_paystub(conn, int(paystub["id"]))
+
+        artifact = get_review_artifact_for_document(conn, int(document_id))
+        if artifact is None:
+            # Build once, then persist for future views.
+            regenerated = _extract_and_scrub_redacted_text(storage_path=str(doc_dict["storage_path"]))
+            upsert_review_artifact(
+                conn,
+                document_id=int(document_id),
+                paystub_id=int(paystub["id"]),
+                redacted_text=str(regenerated.get("redacted_text") or ""),
+                redaction_counts=dict(regenerated.get("redaction_counts") or {}),
+                text_chars=int(regenerated.get("text_chars") or 0),
+                ocr_used_for_review=bool(regenerated.get("ocr_used_for_review")),
+                source="persisted_from_regeneration",
+            )
+            artifact = get_review_artifact_for_document(conn, int(document_id))
+            if artifact is None:
+                # Fallback (should not happen): remain honest and use regenerated payload.
+                artifact = {
+                    "redacted_text": regenerated.get("redacted_text") or "",
+                    "redaction_counts": regenerated.get("redaction_counts") or {},
+                    "source": "regenerated_on_read",
+                }
 
     # Validation warnings: best-effort parse from validation_summary JSON string.
     warnings: list[str] = []
@@ -136,9 +156,9 @@ def get_review_payload(document_id: int) -> dict[str, Any]:
             "ocr_used": doc_dict.get("ocr_used"),
         },
         "review": {
-            "redacted_text": redacted["redacted_text"],
-            "redaction_counts": redacted["redaction_counts"],
-            "redacted_text_source": redacted["source"],
+            "redacted_text": artifact.get("redacted_text") or "",
+            "redaction_counts": artifact.get("redaction_counts") or {},
+            "redacted_text_source": artifact.get("source") or "persisted",
             "validation_warnings": warnings,
             "draft_paystub": paystub,
             "draft_lines": lines,

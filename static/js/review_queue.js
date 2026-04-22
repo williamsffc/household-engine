@@ -80,6 +80,26 @@ function skeletonRows(n) {
     .join("")}</div>`;
 }
 
+function _safeLocalStorageGet(key) {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function _safeLocalStorageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // ignore
+  }
+}
+
+async function loadHouseholdMembers() {
+  return await fetchJson("/api/household/members");
+}
+
 async function load() {
   if (_loading) return;
   _loading = true;
@@ -96,8 +116,9 @@ async function load() {
         accept: ".pdf,.png,.jpg,.jpeg",
         extraFieldsHtml: `
           <div class="upload__field">
-            <div class="upload__label">member_id (required for payroll ingest)</div>
-            <input class="upload__input" id="payroll-member-id" inputmode="numeric" placeholder="e.g. 1" />
+            <div class="upload__label">Household member (required)</div>
+            <select class="upload__input" id="payroll-member-id" style="min-width:240px;"></select>
+            <div class="upload__label" id="payroll-member-hint">Select who this paystub belongs to.</div>
           </div>
           <div class="upload__field">
             <div class="upload__label">After upload</div>
@@ -110,6 +131,9 @@ async function load() {
         getExtraFields: (root) => {
           const memberId = root.querySelector("#payroll-member-id")?.value;
           const auto = root.querySelector("#payroll-auto-ingest")?.checked;
+          if (!memberId || String(memberId).trim() === "") {
+            throw new Error("Select a household member for this payroll upload.");
+          }
           return { member_id: memberId, auto_ingest: Boolean(auto) };
         },
         onUploaded: async (payload, root) => {
@@ -125,6 +149,50 @@ async function load() {
           await load();
         },
       });
+
+      // Populate member picker (Step 17).
+      (async () => {
+        try {
+          const root = uploadHost;
+          const sel = root.querySelector("#payroll-member-id");
+          const hint = root.querySelector("#payroll-member-hint");
+          if (!sel) return;
+
+          sel.innerHTML = `<option value="">Loading members…</option>`;
+          const members = await loadHouseholdMembers();
+          const stored = _safeLocalStorageGet("he-payroll-upload-member-id");
+          sel.innerHTML =
+            `<option value="">Select member…</option>` +
+            (members || [])
+              .map((m) => `<option value="${escapeHtml(m.id)}">${escapeHtml(m.display_name)} (id=${escapeHtml(m.id)})</option>`)
+              .join("");
+
+          if (stored && Array.from(sel.options).some((o) => String(o.value) === String(stored))) {
+            sel.value = String(stored);
+          } else if (members && members.length === 1) {
+            sel.value = String(members[0].id);
+          }
+
+          const updateHint = () => {
+            const v = String(sel.value || "");
+            const opt = sel.options && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
+            const name = opt && v ? String(opt.textContent || "").split(" (id=")[0] : "";
+            if (hint) {
+              hint.textContent = v ? `Uploading for: ${name || `member_id=${v}`}` : "Select who this paystub belongs to.";
+            }
+            if (v) _safeLocalStorageSet("he-payroll-upload-member-id", v);
+          };
+
+          sel.addEventListener("change", updateHint);
+          updateHint();
+        } catch (e) {
+          // Keep upload usable even if member list can't load; user will see validation error on upload.
+          const sel = uploadHost.querySelector("#payroll-member-id");
+          const hint = uploadHost.querySelector("#payroll-member-hint");
+          if (sel) sel.innerHTML = `<option value="">(Failed to load members)</option>`;
+          if (hint) hint.textContent = "Member list unavailable. Try again, or check /api/household/members.";
+        }
+      })();
     }
 
     const listEl = document.getElementById("rq-list");
