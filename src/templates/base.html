@@ -64,6 +64,10 @@
               <span class="sidebar__icon" aria-hidden="true">$</span>
               <span class="sidebar__label">Payroll</span>
             </a>
+            <a class="sidebar__link {% if request and request.url.path.startswith('/portfolio') %}sidebar__link--active{% endif %}" href="/portfolio">
+              <span class="sidebar__icon" aria-hidden="true">◈</span>
+              <span class="sidebar__label">Portfolio</span>
+            </a>
           </nav>
         </aside>
         <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>

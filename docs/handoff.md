@@ -30,10 +30,11 @@ Completed:
 * Step 15
 * Step 16
 * Step 17
+* Step 18
 
 Current active step:
 
-* Step 18 — Review artifact + payroll quality improvements
+* Step 19 — Portfolio UI and richer household planning
 
 ## Current status
 
@@ -45,6 +46,7 @@ Household Engine is now:
 * plus canonical payroll approval workflow
 * plus dedicated Payroll page / paystub examination UI
 * plus improved household-member selection UX
+* plus improved payroll review artifact durability and traceability
 
 ## What is working now
 
@@ -90,6 +92,11 @@ Household Engine is now:
 * ownership mismatch protection exists for review decisions
 * approved payroll becomes analytics-eligible
 * rejected payroll stays out of analytics
+* persisted payroll review artifacts now exist
+* persisted payroll decision metadata now exists:
+  * decided_at
+  * decision_actor
+  * rejection_reason
 
 ### Payroll page
 
@@ -104,6 +111,7 @@ Household Engine is now:
   * uploaded timestamp
 * household-vs-per-person payroll browsing exists
 * payroll status presentation is clearer across approved / rejected / in_review
+* Payroll detail shows rejection reason when present
 
 ### Shared analytics / overview
 
@@ -204,24 +212,20 @@ This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
-### Review artifact / payroll quality
+### Portfolio / planning UI
 
-* persisted review artifacts are still limited
-* rejection reason is stored in audit log only
-* payroll line detail can still be sparse
+* no dedicated Portfolio UI yet
+* deployable-surplus logic exists in backend but is not yet surfaced as a first-class page
+* household planning presentation is still thin
+
+### Payroll quality / later enhancements
+
 * scanned-PDF/OCR robustness still needs improvement
-* extraction quality still has room to improve
+* payroll line detail can still be sparse
 
 ### Review queue / lifecycle refinements
 
 * no reopen/undo workflow yet for approve/reject
-
-### Portfolio / later V2
-
-* no portfolio UI yet
-* no brokerage integrations
-* no richer allocation planning layer
-* no balance-aware surplus model
 
 ### Deferred advanced items
 
@@ -229,19 +233,16 @@ This is the intended model for Person-M and Person-W going forward.
 * no field-level extraction confidence
 * no full auth / user-role system
 * no broader advanced anomaly scoring yet
+* no brokerage integrations yet
 
 ## Immediate recommended next work
 
 Proceed with:
 
-* Step 18 — Review artifact + payroll quality improvements
-
-Then:
-
 * Step 19 — Portfolio UI and richer household planning
 
 ## Important current truth
 
-The member-aware payroll model, approval workflow, and Payroll page now exist.
+The payroll and household cashflow foundations are now strong enough to support a real Portfolio/planning UI.
 
-The next best move is to improve the quality and durability of payroll review artifacts and payroll extraction outputs, so the payroll system becomes more trustworthy in day-to-day use.
+The next best move is to expose the existing portfolio/deployable-surplus logic in a modest, honest household-first planning surface.

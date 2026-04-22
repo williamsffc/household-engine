@@ -358,6 +358,12 @@ body {
   color: var(--color-text);
 }
 
+.banner--warning {
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-soft);
+  color: var(--color-text);
+}
+
 .banner__title {
   font-weight: 650;
   margin-bottom: 2px;

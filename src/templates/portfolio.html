@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="page-header">
+  <h1 class="page-title">Portfolio</h1>
+  <div class="page-subtitle">Deployable surplus and modest household planning</div>
+</header>
+
+<div id="portfolio-status"></div>
+
+<section class="grid grid--cards" id="portfolio-cards"></section>
+
+<section class="grid grid--two">
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">What this means</div>
+      <div class="panel__meta">Honest, flow-based estimate</div>
+    </div>
+    <div id="portfolio-explain"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Inputs</div>
+      <div class="panel__meta" id="portfolio-inputs-meta"></div>
+    </div>
+    <div id="portfolio-inputs"></div>
+  </div>
+</section>
+
+<section class="grid grid--one">
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Recent monthly cashflow</div>
+      <div class="panel__meta">Approved payroll income only</div>
+    </div>
+    <div id="portfolio-cashflow" class="table"></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/portfolio.js"></script>
+{% endblock %}
+

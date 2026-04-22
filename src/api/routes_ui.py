@@ -34,3 +34,8 @@ def review_queue_page(request: Request):
 def payroll_page(request: Request):
     return templates.TemplateResponse(request, "payroll.html", {"request": request})
 
+
+@router.get("/portfolio")
+def portfolio_page(request: Request):
+    return templates.TemplateResponse(request, "portfolio.html", {"request": request})
+

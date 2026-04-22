@@ -1,10 +1,10 @@
-# Step 18 — Review Artifact + Payroll Quality Improvements
+# Step 19 — Portfolio UI and Richer Household Planning
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 17 and is now best described as:
+Household Engine is complete through Step 18 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -12,22 +12,23 @@ Household Engine is complete through Step 17 and is now best described as:
 * plus canonical payroll approval workflow
 * plus dedicated Payroll page / paystub examination UI
 * plus better household-member selection UX
+* plus improved payroll review artifact durability and traceability
 
 The app currently has:
 
 * local-first FastAPI + SQLite Hub
 * working Expenses ingest, analytics, and UI
 * working Payroll draft ingest, payroll APIs, and review queue backend/UI
-* shared cashflow analytics, trends, forecast, and portfolio summary endpoints
+* shared cashflow analytics, trends, forecast, and portfolio summary endpoint
 * Overview, Expenses, Review Queue, and Payroll UI pages
 * shared shell/theme foundation
 * responsive shared navigation
 * shared in-app upload component
-* Expenses UX refresh
-* Review Queue UX refresh
-* payroll approve/reject + canonical approval flow
+* payroll approval/canonical workflow
 * dedicated Payroll page with household-vs-person browsing
 * improved member picker UX for payroll upload
+* persisted redacted payroll review artifacts
+* persisted payroll decision metadata
 
 ## Step 14A–14E status
 
@@ -49,9 +50,7 @@ Delivered:
 
 * approve/reject payroll review actions
 * canonical payroll workflow
-* coherent state transitions across:
-  * `documents.status`
-  * `payroll_paystubs.status`
+* coherent payroll/document status transitions
 * member ownership enforcement
 * approved-only payroll analytics preserved
 * rejected payroll excluded from analytics
@@ -66,10 +65,7 @@ Delivered:
 * Payroll nav entry + UI route
 * payroll list/detail browse UI
 * enriched payroll list/detail payloads for UI
-* status clarity across:
-  * approved
-  * rejected
-  * in_review
+* status clarity across approved / rejected / in_review
 * household-vs-per-person payroll browsing
 * clearer member ownership display
 
@@ -86,6 +82,21 @@ Delivered:
 * clearer upload ownership messaging
 * reduced risk from raw/manual member_id entry
 
+## Step 18 status
+
+Completed enough.
+
+Delivered:
+
+* persisted payroll review artifacts in SQLite
+* persisted redacted text + redaction counts metadata
+* persisted payroll decision metadata:
+  * decided_at
+  * decision_actor
+  * rejection_reason
+* Payroll detail now shows rejection reason when present
+* no regression to approval/canonical semantics or approved-only analytics
+
 ## Product rule now locked in
 
 The app is **household-first**, but every payroll record belongs to exactly **one household member**.
@@ -97,116 +108,124 @@ That means:
   * per person
   * household combined
 * household totals are the rollup of approved per-member payroll
-* upload/review/approval flow must preserve ownership truthfully
+* planning/portfolio views should remain household-first while respecting the underlying approved household cashflow model
 
-## Goal of Step 18
+## Goal of Step 19
 
-Improve the quality, durability, and usefulness of payroll review artifacts and payroll extraction outputs without broadening into a major redesign.
+Build a Portfolio UI and modest richer household planning layer on top of the existing approved-payroll + expenses + overview portfolio endpoint.
 
-This step is about making the review/examination pipeline more trustworthy and useful over time.
+This should turn the current portfolio/deployable-surplus backend into a real user-facing page or section that helps answer:
+
+* how much deployable surplus exists
+* what the household can realistically set aside
+* how current household cashflow supports basic planning decisions
 
 ## Product intent
 
-Right now the payroll workflow exists and is usable, but some quality-oriented pieces are still thin:
+This step should create a practical, honest planning experience — not an overpromising optimization engine.
 
-* review artifacts are mostly transient/read-through payloads
-* rejection reasons live only in audit log details
-* payroll lines can be sparse
-* scanned-PDF/OCR robustness is still limited
-* extraction quality can still be improved
+The Portfolio UI should feel like:
 
-This step should improve the practical reliability of payroll handling while staying incremental.
+* a modest household planning surface
+* grounded in actual approved payroll + expense data
+* clear about what is estimated vs known
+* useful for routine household decision-making
 
 ## Required outcome
 
-Improve payroll review artifact and payroll quality behavior with focus on:
+Build a Portfolio UI / planning experience that supports:
 
-1. better persisted review artifact support where practical
-2. stronger payroll detail capture/readability where practical
-3. improved payroll extraction quality or fallback robustness
-4. better traceability of review outcomes where practical
-5. no regression to approval/canonical workflow
-6. no regression to household-member ownership model
+1. a Portfolio page or equivalent first-class UI surface
+2. clear display of current deployable surplus / planning summary
+3. connection to current approved-payroll-driven cashflow model
+4. honest explanation of what the portfolio/planning number means
+5. modest richer planning presentation beyond a raw endpoint response
+6. no regression to household-first combined analytics model
 
 ## Scope guidance
 
-This is a quality-improvement step, not a broad architecture rewrite.
+This is a portfolio/planning UI step, not a full wealth platform.
 
 That means:
 
-* improve what happens around payroll review artifacts and extraction quality
-* make small, high-value persistence/traceability improvements if practical
-* improve payroll quality where the current implementation is thin
-* keep the implementation incremental and aligned with the current repo
-* do not broaden into portfolio work
-* do not redesign the whole app
-* do not start advanced auth/settings systems
+* expose existing portfolio/deployable-surplus logic in the UI
+* improve readability and usefulness of planning outputs
+* add modest planning-oriented framing if practical
+* keep assumptions conservative and honest
+* do not broaden into brokerage integrations
+* do not build advanced optimization or forecasting systems here
+* do not redesign the whole application
 
 ## Suggested focus areas
 
-### Review artifact persistence
+### Portfolio page / route
 
-Today some review information is available only transiently or indirectly.
+Create a dedicated place to view planning/portfolio information.
 
-Consider modest improvements such as:
+This may be:
 
-* preserving rejection reason more explicitly if practical
-* preserving useful review payload details more durably if practical
-* improving traceability of what was reviewed/approved/rejected
+* a dedicated `/portfolio` page
+* or another equally first-class UI surface if it fits the current structure better
 
-### Payroll detail quality
+### Planning summary
 
-Improve practical payroll usefulness where current outputs are thin:
+Help the user understand:
 
-* better payroll line handling if low-risk
-* clearer draft/approved detail completeness
-* small improvements to extraction robustness
+* what the current deployable surplus number means
+* what inputs it depends on
+* what approved payroll / expenses are contributing
+* when the result is unavailable or conservative because data is incomplete
 
-### OCR / scanned-document fallback quality
+### Household-first presentation
 
-If there is a modest improvement that increases scanned-paystub resilience without sprawling, this is a good place for it.
+This should remain a household-level planning page.
 
-### Review/payload honesty
+It can acknowledge underlying per-member payroll, but the planning result should remain household combined unless there is a very small, useful drill-down.
 
-The system should remain honest about what is known vs inferred vs missing.
+### Honesty and guardrails
+
+The UI should make it clear when:
+
+* payroll is incomplete
+* there is not enough approved data
+* the output is conservative / unavailable / zero for honest reasons
 
 ## Files likely involved
 
 Review first:
 
-* `src/payroll/ingest.py`
-* `src/payroll/extractor_pdf.py`
-* `src/payroll/extractor_ocr.py`
-* `src/payroll/repository.py`
-* `src/services/review_queue.py`
-* `src/api/routes_review.py`
-* migrations / schema files if modest persistence changes are needed
-* `src/templates/review_queue.html`
-* `src/templates/payroll.html`
-* `static/js/review_queue.js`
-* `static/js/payroll.js`
+* `src/api/routes_overview.py`
+* `src/services/portfolio.py`
+* `src/api/routes_ui.py`
+* `src/templates/base.html`
+* `src/templates/portfolio.html` if needed
+* `static/js/portfolio.js` if needed
+* `static/css/app.css`
 
 ## Deliverables for this step
 
-1. improved payroll review artifact handling and/or persistence
-2. improved payroll quality/reliability in at least one high-value area
-3. better traceability of review outcomes where practical
-4. no regression to approval/canonical workflow
-5. no regression to member ownership semantics
-6. no regression to current Review Queue / Payroll page UX
+1. Portfolio UI surface
+2. route/navigation support if needed
+3. display of deployable surplus / planning summary
+4. honest explanation of inputs and limitations
+5. no regression to existing overview/expenses/payroll/review queue pages
+6. no regression to approved-only payroll semantics
 
 ## Constraints
 
 * keep changes incremental
 * no framework migration
 * no Tailwind rewrite
+* no brokerage integrations yet
+* no advanced optimization engine
 * no unrelated global redesign
-* no portfolio work yet
-* no advanced auth/settings system yet
-* keep the system local-first and honest about data quality/state
+* keep the system local-first and honest about data quality/assumptions
 
-## What comes next after Step 18
+## What comes next after Step 19
 
-If Step 18 lands cleanly, the next roadmap order becomes:
+After Step 19, the next work should likely be chosen based on product value and real usage, for example:
 
-* Step 19 — Portfolio UI and richer household planning
+* stronger payroll extraction quality
+* scanned-PDF OCR support
+* richer portfolio/planning refinements
+* persisted review artifact expansion
