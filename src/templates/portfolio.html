@@ -29,12 +29,15 @@
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; align-items:center;">
       <button id="portfolio-apply" class="icon-button icon-button--primary" type="button">Apply / Recompute</button>
+      <button id="portfolio-reset-defaults" class="icon-button" type="button">Reset to defaults</button>
       <span style="color:var(--color-text-muted); font-size:12px;">
         These controls change the estimate inputs. They don’t change your underlying approved payroll or expenses data.
       </span>
     </div>
   </div>
 </section>
+
+<p id="portfolio-assumptions-summary" class="portfolio-assumptions" aria-live="polite"></p>
 
 <section class="grid grid--cards" id="portfolio-cards"></section>
 
@@ -68,6 +71,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/js/portfolio.js"></script>
+<script src="/static/js/portfolio.js?v=21b"></script>
 {% endblock %}
 

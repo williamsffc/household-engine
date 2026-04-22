@@ -1,10 +1,10 @@
-# Step 20 — Portfolio Controls + Recompute UX
+# Step 21 — Portfolio Polish + Persistent Shell Scroll Behavior
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 19 and is now best described as:
+Household Engine is complete through Step 20 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -14,6 +14,7 @@ Household Engine is complete through Step 19 and is now best described as:
 * plus better household-member selection UX
 * plus improved payroll review artifact durability and traceability
 * plus Portfolio UI / modest household planning surface
+* plus Portfolio controls + recompute UX
 
 The app currently has:
 
@@ -31,8 +32,9 @@ The app currently has:
 * persisted redacted payroll review artifacts
 * persisted payroll decision metadata
 * first-class Portfolio UI page
+* Portfolio controls for trailing months / liquidity reserve months
 
-## Step 14A–19 status
+## Step 14A–20 status
 
 Completed enough.
 
@@ -46,6 +48,7 @@ Delivered:
 * better household-member selection UX
 * persisted payroll review artifacts + decision metadata
 * Portfolio UI backed by approved-payroll-only planning logic
+* Portfolio controls + recompute UX
 
 ## Product rule now locked in
 
@@ -58,99 +61,117 @@ That means:
   * approved payroll
   * expenses / household cashflow
 * the UI must remain honest when outputs are conservative, limited, or unavailable
-* no speculative optimizer behavior should be introduced
+* the shell should now feel more like a stable command-center frame
 
-## Goal of Step 20
+## Goal of Step 21
 
-Make the Portfolio page more interactive and practically useful by adding small, honest controls for recomputing the planning result.
+Polish the Portfolio page and improve the app shell so the header/navigation remain persistent while the inner page content scrolls.
 
-This is a refinement step, not a new planning engine.
+This should make the app feel more stable and dashboard-like, especially on desktop, without overcomplicating mobile behavior.
 
 ## Product intent
 
-Right now the Portfolio page works, but it uses backend defaults only.
+This step has two tightly related goals:
 
-This step should let the household explore a small range of assumptions safely, such as:
+### 1. Portfolio polish
 
-* how many trailing months are used
-* how much liquidity reserve to hold back
+Add small usability improvements such as:
 
-without changing the underlying conservative planning model.
+* Reset to defaults
+* clearer current assumptions summary
+* cleaner small UX touches around recompute behavior
+
+### 2. Persistent shell behavior
+
+Refine the shared shell so that:
+
+* topbar/header remains persistent
+* navigation remains persistent
+* the main page content becomes the primary scrollable region
+
+This should improve orientation and usability across Overview, Expenses, Review Queue, Payroll, and Portfolio.
 
 ## Required outcome
 
-Add a modest recompute UX on the Portfolio page that supports:
+### Portfolio polish
 
-1. adjusting `trailing_months`
-2. adjusting `liquidity_reserve_months`
-3. recomputing the planning result from the existing backend model
-4. preserving honest limited/unavailable states
-5. preserving approved-payroll-only semantics
-6. staying household-first
+1. add Reset to defaults control
+2. add a small “Current assumptions” summary
+3. preserve existing recompute behavior
+4. preserve honest limited/unavailable states
+5. preserve approved-payroll-only semantics
+
+### Shared shell refinement
+
+6. make header/topbar persistent
+7. keep navigation persistent
+8. make the inner main content area the primary scrollable region
+9. keep the experience clean on desktop
+10. avoid awkward nested-scroll behavior on smaller screens
 
 ## Scope guidance
 
-This is a portfolio refinement step, not an optimization or integrations step.
+This is a modest polish/refinement step, not a full shell rewrite.
 
 That means:
 
-* keep the existing backend planning model
-* expose a small number of safe controls
-* add a simple Apply / Recompute interaction if useful
-* keep the UI calm, honest, and understandable
-* do not add brokerage integrations
-* do not add advanced optimization, target allocation engines, or speculative forecast tuning
-* do not redesign the whole Portfolio page
+* improve the Portfolio page a little
+* improve the shared shell scrolling behavior
+* keep the implementation incremental
+* do not redesign every page
+* do not create many competing scroll regions
+* do not start payroll extraction work yet
 
 ## Suggested focus areas
 
-### Portfolio controls
+### Portfolio page
 
-Add clear controls for:
+Add:
+* Reset to defaults
+* assumptions summary near the cards
+* small UX polish around control values and apply/recompute flow
 
-* trailing months
-* liquidity reserve months
+### Shell layout
 
-Use safe bounds and defaults.
+Prefer:
+* persistent topbar
+* persistent sidebar/nav on desktop
+* main content region scrolls
+* careful behavior on medium/small screens so the app does not feel cramped
 
-### Recompute/apply flow
+### Responsiveness
 
-The user should be able to:
+Be careful not to make mobile/tablet behavior worse.
 
-* change a control
-* recompute the result
-* understand that the output is still only a modest planning estimate
-
-### Explanation / honesty
-
-Make it clear that:
-
-* the result is based on approved payroll + expenses
-* changing the controls changes the estimate inputs, not the underlying truth
-* unavailable/limited states should remain explicit
-
-### Household-first framing
-
-Even with controls, the Portfolio page should stay a household planning page, not a personal investing tool.
+A good result is:
+* desktop: stable shell, scrollable content region
+* small screens: still usable, not trapped in awkward nested scroll
 
 ## Files likely involved
 
 Review first:
 
-* `src/api/routes_overview.py`
-* `src/services/portfolio.py`
+* `src/templates/base.html`
 * `src/templates/portfolio.html`
 * `static/js/portfolio.js`
 * `static/css/app.css`
 
+Potentially inspect page wrappers/layout structure across:
+* Overview
+* Expenses
+* Review Queue
+* Payroll
+* Portfolio
+
 ## Deliverables for this step
 
-1. Portfolio page controls for `trailing_months`
-2. Portfolio page controls for `liquidity_reserve_months`
-3. recompute/apply UX
-4. preserved honest limited/unavailable states
-5. no regression to approved-payroll-only semantics
-6. no regression to current Portfolio page clarity
+1. Reset to defaults control on Portfolio page
+2. current assumptions summary on Portfolio page
+3. persistent shell/topbar/nav behavior
+4. main content area as primary scroll region
+5. no regression to responsive shell behavior
+6. no regression to Portfolio planning semantics
+7. no regression to other current pages
 
 ## Constraints
 
@@ -160,13 +181,13 @@ Review first:
 * no brokerage integrations
 * no advanced optimizer behavior
 * no unrelated global redesign
-* keep the system local-first and honest about assumptions
+* keep the system local-first and honest about assumptions/state
 
-## What comes next after Step 20
+## What comes next after Step 21
 
-After Step 20, the next work should likely be chosen based on practical value, for example:
+After Step 21, the next roadmap order becomes:
 
-* stronger payroll extraction quality
-* scanned-PDF OCR support
-* richer portfolio/planning refinement
-* additional review artifact improvements
+* Step 22 — Payroll extraction quality improvements
+* Step 23 — Scanned-PDF OCR support
+* Step 24 — Reopen / undo workflow for payroll decisions
+* Step 25 — Richer review artifact expansion

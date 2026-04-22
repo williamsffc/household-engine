@@ -32,10 +32,11 @@ Completed:
 * Step 17
 * Step 18
 * Step 19
+* Step 20
 
 Current active step:
 
-* Step 20 — Portfolio controls + recompute UX
+* Step 21 — Portfolio polish + persistent shell scroll behavior
 
 ## Current status
 
@@ -49,6 +50,7 @@ Household Engine is now:
 * plus improved household-member selection UX
 * plus improved payroll review artifact durability and traceability
 * plus Portfolio UI / modest household planning surface
+* plus Portfolio controls + recompute UX
 
 ## What is working now
 
@@ -125,6 +127,11 @@ Household Engine is now:
 * Portfolio shows supporting assumptions and recent cashflow context
 * Portfolio shows honest limited/unavailable warning states when approved payroll is missing or insufficient
 * Portfolio remains a modest, household-first planning surface
+* Portfolio controls exist for:
+  * trailing_months
+  * liquidity_reserve_months
+* recompute/apply UX exists
+* current control values are reflected in the URL query string
 * approved-only payroll semantics remain unchanged
 
 ### Shared analytics / overview
@@ -146,17 +153,7 @@ Household Engine is now:
 * theme preference persisted locally
 * early theme initialization to reduce flash on load
 * shell/theme cleanup for hover, active-row, overlay, focus-visible, callout, codeblock, and banner/error token states
-
-### Responsive shell behavior
-
-* topbar is now shared across current UI pages
-* large screens use full sidebar with icons + labels
-* medium screens use collapsed icon rail
-* small screens use menu button + off-canvas drawer + backdrop
-* drawer state is handled with small explicit shared JS
-* nav no longer disappears on smaller widths
-* cache-busted shared shell CSS/JS asset URLs added in base template to avoid stale browser assets
-* responsive shell behavior is browser-validated
+* responsive shared navigation already exists across large / medium / small layouts
 
 ### Shared upload interaction layer
 
@@ -230,10 +227,9 @@ This is the intended model for Person-M and Person-W going forward.
 
 ### Portfolio / planning refinement
 
-* Portfolio page still uses backend defaults only
-* no UI controls yet for `trailing_months`
-* no UI controls yet for `liquidity_reserve_months`
-* no recompute/apply UX yet for planning assumptions
+* no Reset to defaults control yet
+* no explicit current-assumptions summary yet
+* shell does not yet use the desired persistent-header/nav with scrollable-inner-page behavior
 
 ### Payroll quality / later enhancements
 
@@ -250,16 +246,23 @@ This is the intended model for Person-M and Person-W going forward.
 * no field-level extraction confidence
 * no full auth / user-role system
 * no broader advanced anomaly scoring yet
-* no brokerage integrations yet
+* no brokerage integrations
 
 ## Immediate recommended next work
 
 Proceed with:
 
-* Step 20 — Portfolio controls + recompute UX
+* Step 21 — Portfolio polish + persistent shell scroll behavior
+
+Then:
+
+* Step 22 — Payroll extraction quality improvements
+* Step 23 — Scanned-PDF OCR support
+* Step 24 — Reopen / undo workflow for payroll decisions
+* Step 25 — Richer review artifact expansion
 
 ## Important current truth
 
-The Portfolio page now exists and is honest/useful, but it still uses fixed backend defaults.
-
-The next best move is to add small, safe controls for planning assumptions so the household can recompute the estimate without changing the underlying modest planning model.
+The app now has a usable Portfolio page and recompute controls, but the next best UX improvement is:
+* small Portfolio polish
+* plus a more stable command-center shell where header/nav stay persistent and the main page content scrolls

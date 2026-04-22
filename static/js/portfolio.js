@@ -1,3 +1,6 @@
+const DEFAULT_TRAILING_MONTHS = 3;
+const DEFAULT_LIQUIDITY_RESERVE_MONTHS = 1.0;
+
 function escapeHtml(s) {
   return String(s || "")
     .replaceAll("&", "&amp;")
@@ -78,6 +81,22 @@ function setBanner(kind, title, body) {
       <div class="banner__body">${escapeHtml(body)}</div>
     </div>
   `;
+}
+
+function renderAssumptionsSummary(summary) {
+  const el = document.getElementById("portfolio-assumptions-summary");
+  if (!el) return;
+  const a = summary?.assumptions;
+  if (!a || a.trailing_months == null || a.liquidity_reserve_months_target == null) {
+    el.textContent = "";
+    return;
+  }
+  const split = a.allocation_split || {};
+  const allocN = Number(split.available_for_allocation);
+  const tradeN = Number(split.available_for_trading);
+  const allocPct = Number.isFinite(allocN) ? Math.round(allocN * 100) : 70;
+  const tradePct = Number.isFinite(tradeN) ? Math.round(tradeN * 100) : Math.max(0, 100 - allocPct);
+  el.textContent = `Current assumptions: ${a.trailing_months}-month trailing averages, ${a.liquidity_reserve_months_target}× monthly expenses as liquidity reserve, ${allocPct}% / ${tradePct}% deployable surplus split (allocation vs trading). Grounded in approved payroll income and normalized expenses.`;
 }
 
 function renderCards(summary) {
@@ -201,24 +220,29 @@ function getControls() {
     trailingInput: document.getElementById("portfolio-trailing-months"),
     reserveInput: document.getElementById("portfolio-liquidity-reserve-months"),
     applyBtn: document.getElementById("portfolio-apply"),
+    resetBtn: document.getElementById("portfolio-reset-defaults"),
   };
 }
 
 function getRequestedParamsFromUrlOrDefaults() {
   const trailingRaw = getParamStr("trailing_months");
   const reserveRaw = getParamStr("liquidity_reserve_months");
-  const trailing = clampInt(trailingRaw ?? 3, 1, 12) ?? 3;
-  const reserve = clampFloat(reserveRaw ?? 1.0, 0.0, 6.0);
+  const trailing = clampInt(trailingRaw ?? DEFAULT_TRAILING_MONTHS, 1, 12) ?? DEFAULT_TRAILING_MONTHS;
+  const reserve = clampFloat(reserveRaw ?? DEFAULT_LIQUIDITY_RESERVE_MONTHS, 0.0, 6.0);
   return {
     trailing_months: trailing,
-    liquidity_reserve_months: reserve == null ? 1.0 : Math.round(reserve * 10) / 10,
+    liquidity_reserve_months:
+      reserve == null ? DEFAULT_LIQUIDITY_RESERVE_MONTHS : Math.round(reserve * 10) / 10,
   };
 }
 
 function setControlsFromParams(params) {
   const { trailingInput, reserveInput } = getControls();
   if (trailingInput) trailingInput.value = String(params.trailing_months);
-  if (reserveInput) reserveInput.value = String(params.liquidity_reserve_months);
+  if (reserveInput) {
+    const r = Number(params.liquidity_reserve_months);
+    reserveInput.value = Number.isFinite(r) ? (Math.round(r * 10) / 10).toFixed(1) : "";
+  }
 }
 
 function readParamsFromControls() {
@@ -239,6 +263,7 @@ async function load(params) {
   const cards = document.getElementById("portfolio-cards");
   if (cards) cards.innerHTML = skeletonCards();
   setBanner(null);
+  renderAssumptionsSummary(null);
 
   try {
     const qs = new URLSearchParams();
@@ -247,6 +272,7 @@ async function load(params) {
       qs.set("liquidity_reserve_months", String(params.liquidity_reserve_months));
     const summary = await fetchJson(`/api/overview/portfolio?${qs.toString()}`);
     renderCards(summary);
+    renderAssumptionsSummary(summary);
     renderExplain(summary);
     renderInputs(summary);
     renderCashflow(summary);
@@ -257,6 +283,7 @@ async function load(params) {
     }
   } catch (e) {
     setBanner("error", "Portfolio unavailable", e.message || String(e));
+    renderAssumptionsSummary(null);
     const el = document.getElementById("portfolio-cards");
     if (el) el.innerHTML = "";
   } finally {
@@ -264,8 +291,19 @@ async function load(params) {
   }
 }
 
+async function resetToDefaults() {
+  setParam("trailing_months", null);
+  setParam("liquidity_reserve_months", null);
+  const p = {
+    trailing_months: DEFAULT_TRAILING_MONTHS,
+    liquidity_reserve_months: DEFAULT_LIQUIDITY_RESERVE_MONTHS,
+  };
+  setControlsFromParams(p);
+  await load(p);
+}
+
 function bindControlsOnce() {
-  const { trailingInput, reserveInput, applyBtn } = getControls();
+  const { trailingInput, reserveInput, applyBtn, resetBtn } = getControls();
   if (applyBtn && !applyBtn.dataset.bound) {
     applyBtn.dataset.bound = "1";
     applyBtn.addEventListener("click", async () => {
@@ -277,6 +315,16 @@ function bindControlsOnce() {
       } catch (e) {
         setBanner("error", "Invalid controls", e.message || String(e));
       }
+    });
+  }
+
+  if (resetBtn && !resetBtn.dataset.bound) {
+    resetBtn.dataset.bound = "1";
+    resetBtn.addEventListener("click", () => {
+      resetToDefaults().catch((err) => {
+        console.error(err);
+        setBanner("error", "Portfolio unavailable", err.message || String(err));
+      });
     });
   }
 
