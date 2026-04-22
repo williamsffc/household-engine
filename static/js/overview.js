@@ -29,6 +29,11 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
 async function load() {
   const incomeEl = document.getElementById("card-income");
   const incomeHintEl = document.getElementById("card-income-hint");
@@ -113,23 +118,45 @@ async function load() {
   const income = rows.map((r) => Number(r.total_income || 0));
   const expenses = rows.map((r) => Number(r.total_expenses || 0));
 
+  const grid = cssVar("--chart-grid", "rgba(15,23,42,0.12)");
+  const tick = cssVar("--color-text-muted", "#475569");
+  const legend = cssVar("--color-text-muted", "#475569");
+
   // eslint-disable-next-line no-undef
   new Chart(canvas.getContext("2d"), {
     type: "line",
     data: {
       labels,
       datasets: [
-        { label: "Net", data: net, borderColor: "#38bdf8", backgroundColor: "rgba(56,189,248,0.12)", tension: 0.25 },
-        { label: "Income", data: income, borderColor: "#34d399", backgroundColor: "rgba(52,211,153,0.08)", tension: 0.25 },
-        { label: "Expenses", data: expenses, borderColor: "#fb7185", backgroundColor: "rgba(251,113,133,0.08)", tension: 0.25 },
+        {
+          label: "Net",
+          data: net,
+          borderColor: cssVar("--chart-net", "#2563eb"),
+          backgroundColor: cssVar("--chart-net-fill", "rgba(37,99,235,0.14)"),
+          tension: 0.25,
+        },
+        {
+          label: "Income",
+          data: income,
+          borderColor: cssVar("--chart-income", "#16a34a"),
+          backgroundColor: cssVar("--chart-income-fill", "rgba(22,163,74,0.12)"),
+          tension: 0.25,
+        },
+        {
+          label: "Expenses",
+          data: expenses,
+          borderColor: cssVar("--chart-expenses", "#dc2626"),
+          backgroundColor: cssVar("--chart-expenses-fill", "rgba(220,38,38,0.12)"),
+          tension: 0.25,
+        },
       ],
     },
     options: {
       responsive: true,
-      plugins: { legend: { labels: { color: "#cbd5e1" } } },
+      plugins: { legend: { labels: { color: legend } } },
       scales: {
-        x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
-        y: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
+        x: { ticks: { color: tick }, grid: { color: grid } },
+        y: { ticks: { color: tick }, grid: { color: grid } },
       },
     },
   });

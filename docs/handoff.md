@@ -1,226 +1,223 @@
-# Household Engine — Handoff / Current Repo Truth (Updated)
+# Household Engine — Handoff / Current Repo Truth
 
-## Purpose of this document
+## Project state
 
-This file is the **current repo truth / actual implemented state**.
+Completed:
 
-It should describe:
-- what is already built
-- what routes/pages exist now
-- what behavior is already real
-- what is still missing
-- what the next development slice should focus on
+* Step 1
+* Step 2
+* Step 2.5
+* Step 3
+* Step 3.5
+* Step 4A
+* Step 4B
+* Step 5A
+* Step 5B
+* Step 5C
+* Step 6
+* Step 7
+* Step 8
+* Step 9
+* Step 10
+* Step 11
+* Step 12
+* Step 13
+* Step 14A
+* Step 14B
+* Step 14C
+* Step 14D
+* Step 14E
 
-It should not be used as the long-term architecture blueprint.
-For target design, use `architecture.md`.
-For the immediate active step plan, use `Pasted_text.md`.
+Current active step:
 
----
+* Step 15 — Payroll Approval / Canonical Workflow
 
 ## Current status
 
-Household Engine is currently:
-- **V1-complete**
-- plus **selective V2-ready hardening**
-- local-first
-- FastAPI + SQLite based
-- usable through Overview, Expenses, and Review Queue pages
+Household Engine is now:
 
-Step 13 is complete.
+* V1-complete
+* plus selective V2-ready hardening
+* plus UI foundation refresh completed enough to support next workflow work
 
----
+## What is working now
 
-## What is implemented now
+### Core platform
 
-### Shared Hub
-
-Implemented:
-- FastAPI app shell
-- SQLite database setup
-- WAL mode
-- migration runner
-- document upload and registry
-- process / reprocess support
-- document metadata tracking
-- file hashing
-- audit logging
-- processing runs support
-- modest local-only middleware guardrail
+* local-first FastAPI Hub
+* shared SQLite database and migrations
+* upload flow and document registry
+* processing runs and audit logging
+* modest local-only network guardrail
 
 ### Expenses
 
-Implemented:
-- expense ingest pipeline
-- parsers and categorization
-- anomaly support
-- expense repository logic
-- expense routes
-- monthly / categories / recent / summary read models
-- Expenses UI page
+* expense ingest pipeline
+* parser/repository logic
+* categorization and anomalies
+* expenses analytics endpoints
+* Expenses UI page
+* in-app Expenses upload surface
+* upload-to-ingest wiring in current frontend flow
+* labeled upload entry point on page
+* partial-failure banner behavior instead of all-or-nothing page failure
+* calmer loading placeholders
+* safer chart re-rendering
+* improved phone-width summary-card layout
 
-Current user-facing state:
-- backend works
-- analytics work
-- dashboard experience exists
-- expense upload is still more backend-oriented than ideal from the UI perspective
+### Payroll / review
 
-### Payroll
+* payroll draft ingest pipeline
+* payroll paystub APIs
+* review queue backend
+* Review Queue UI page
+* payroll draft review payloads
+* in-app Review Queue payroll upload surface
+* clearer upload hierarchy and `in_review` explanation
+* more scannable selected-item detail layout
+* calmer loading states and partial-failure behavior
 
-Implemented:
-- payroll tables and migrations
-- payroll draft ingest pipeline
-- native PDF extraction
-- OCR fallback path
-- PII scrubbing
-- heuristic extraction / validation behavior
-- draft persistence
-- payroll ingest route
-- payroll list/detail APIs
-- monthly payroll aggregation API
+### Shared analytics / overview
 
-Current user-facing state:
-- payroll can be ingested into draft / in-review state
-- payroll review payloads are visible
-- approved payroll workflow does **not** exist yet
+* cashflow analytics views
+* overview dashboard UI
+* trend / forecast endpoints
+* portfolio / deployable-surplus endpoint
 
-### Review Queue
+### Shared shell / UI foundation
 
-Implemented:
-- review queue backend
-- review queue detail payloads
-- Review Queue UI page
-- display of metadata, redacted text, redaction counts, warnings, draft paystub, and draft lines
+* shared base shell across current UI pages
+* semantic theme token system in shared CSS
+* light mode default
+* dark mode support
+* theme toggle in shared shell
+* theme preference persisted locally
+* early theme initialization to reduce flash on load
+* Overview / Expenses chart styling updated to use theme-driven variables
+* shell/theme cleanup for hover, active-row, overlay, focus-visible, callout, codeblock, and banner/error token states
 
-Current user-facing state:
-- readable review surface exists
-- it is still effectively read-only for payroll decisions
+### Responsive shell behavior
 
-### Overview / analytics
+* topbar is now shared across current UI pages
+* large screens use full sidebar with icons + labels
+* medium screens use collapsed icon rail
+* small screens use menu button + off-canvas drawer + backdrop
+* drawer state is handled with small explicit shared JS
+* nav no longer disappears on smaller widths
+* cache-busted shared shell CSS/JS asset URLs added in base template to avoid stale browser assets
+* responsive shell behavior is browser-validated
 
-Implemented:
-- summary endpoint
-- cashflow endpoint
-- recent-documents endpoint
-- trends endpoint
-- forecast endpoint
-- portfolio / deployable-surplus endpoint
-- Overview UI page
+### Shared upload interaction layer
 
-Important current rule preserved:
-- only approved payroll counts toward analytics
-- current draft payroll contributes zero income
-
----
+* shared upload surface helper exists in shared JS
+* upload surface is reusable across pages
+* drag-and-drop + click-to-upload supported
+* upload states include idle, drag-over, uploading, success, and error
+* current upload integration uses existing `POST /api/documents/upload`
+* Review Queue payroll upload currently uses manual `member_id` entry
 
 ## Current implemented routes
 
 ### UI
 
-- `GET /`
-- `GET /expenses`
-- `GET /review-queue`
+* `GET /`
+* `GET /expenses`
+* `GET /review-queue`
 
 ### Overview API
 
-- `GET /api/overview/summary`
-- `GET /api/overview/recent-documents`
-- `GET /api/overview/cashflow`
-- `GET /api/overview/trends`
-- `GET /api/overview/forecast`
-- `GET /api/overview/portfolio`
+* `GET /api/overview/summary`
+* `GET /api/overview/recent-documents`
+* `GET /api/overview/cashflow`
+* `GET /api/overview/trends`
+* `GET /api/overview/forecast`
+* `GET /api/overview/portfolio`
 
 ### Expenses API
 
-- `GET /api/expenses/transactions`
-- `GET /api/expenses/monthly`
-- `GET /api/expenses/categories`
-- `GET /api/expenses/recent`
-- `POST /api/expenses/documents/{document_id}/ingest`
+* `GET /api/expenses/transactions`
+* `GET /api/expenses/monthly`
+* `GET /api/expenses/categories`
+* `GET /api/expenses/recent`
+* `POST /api/expenses/documents/{document_id}/ingest`
 
 ### Payroll API
 
-- `POST /api/payroll/documents/{document_id}/ingest`
-- `GET /api/payroll/paystubs`
-- `GET /api/payroll/paystubs/{paystub_id}`
-- `GET /api/payroll/monthly`
+* `POST /api/payroll/documents/{document_id}/ingest`
+* `GET /api/payroll/paystubs`
+* `GET /api/payroll/paystubs/{paystub_id}`
+* `GET /api/payroll/monthly`
 
 ### Review Queue API
 
-- `GET /api/review-queue`
-- `GET /api/review-queue/{document_id}`
+* `GET /api/review-queue`
+* `GET /api/review-queue/{document_id}`
 
----
+## Product rule now locked in
+
+The app is **household-first**, but every payroll record belongs to exactly **one household member**.
+
+This means:
+
+* payroll should be tracked per member
+* approved payroll analytics should support both:
+  * per-member views
+  * household combined rollups
+* household payroll totals should be computed from approved per-member payroll
+
+This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
-### Payroll workflow gaps
+### Payroll / canonicalization
 
-Not implemented yet:
-- payroll approve action
-- payroll reject action
-- canonical payroll approval flow
-- approval-driven audit semantics
-- dedicated Payroll page / paystub examination UI
+* no approve/reject payroll workflow yet
+* no canonical payroll approval flow yet
+* no dedicated Payroll page / paystub examination UI yet
+* no robust scanned-PDF OCR yet
+* no strong payroll line-item extraction yet
 
-### Review and extraction gaps
+### Review queue / artifact persistence
 
-Not implemented yet:
-- persisted review artifacts
-- robust scanned-PDF OCR
-- stronger payroll line-item extraction
-- visual PDF redaction
-- field-level extraction confidence
+* no approve endpoint yet
+* no reject endpoint yet
+* no persisted redacted review artifact yet
 
-### Portfolio / broader V2 gaps
+### Payroll member UX
 
-Not implemented yet:
-- portfolio UI
-- brokerage integrations
-- richer allocation planning layer
-- balance-aware surplus model
-- richer auth / user-role system
+* Review Queue payroll upload still needs a better member-selection UX
+* dedicated member-level payroll browsing/filtering UI does not exist yet
+* household vs per-member payroll views are not yet surfaced in UI
 
----
+### Portfolio / later V2
 
-## New immediate product/UI observations
+* no portfolio UI yet
+* no brokerage integrations
+* no richer allocation planning layer
+* no balance-aware surplus model
 
-The next iteration should acknowledge these UX realities:
+### Deferred advanced items
 
-1. **Upload should move into the UI**
-   - users should interact through app pages rather than folder structure
-   - Expenses should gain an in-page upload surface
-   - Review Queue should gain an in-page payroll upload surface
+* no visual PDF redaction
+* no field-level extraction confidence
+* no full auth / user-role system
+* no broader advanced anomaly scoring yet
 
-2. **Navigation needs responsive behavior**
-   - current navigation disappearing on smaller browser widths is a real UX issue
-   - nav should collapse or transform, not vanish
+## Immediate recommended next work
 
-3. **The current visual theme is too dark**
-   - the next slice should introduce proper light/dark theme support instead of one-off color tweaks
+Proceed with:
 
-4. **A dedicated Payroll page should follow, not lead**
-   - first stabilize shell, theme, navigation, and upload UX
-   - then add payroll approval workflow
-   - then add Payroll page / paystub examination UI
+* Step 15 — Payroll Approval / Canonical Workflow
 
----
+Then:
 
-## Recommended next build sequence
+* Step 16 — Dedicated Payroll page / paystub examination UI
+* Step 17 — Better household-member selection UX
+* Step 18 — Review artifact + payroll quality improvements
+* Step 19 — Portfolio UI and richer household planning
 
-The next development slice should be:
+## Important current truth
 
-1. **Theme system + shell foundation**
-2. **Responsive navigation overhaul**
-3. **Shared in-app upload component**
-4. **Expenses UX refresh**
-5. **Review Queue UX refresh**
-6. **Payroll approval / canonical workflow**
-7. **Dedicated Payroll page / paystub examination UI**
+The biggest remaining functional product gap is still payroll approve/reject + canonical approval flow.
 
-This sequencing fits the repo’s current state better than jumping immediately into the Payroll page.
-
----
-
-## Current repo summary in one paragraph
-
-The repo currently provides a working local-first Hub, a functioning Expenses module, a functioning payroll draft/review-oriented backend, a usable Review Queue UI, shared cashflow and forecasting outputs, and selective V2 hardening. The biggest remaining functional gap is payroll approval / canonicalization, while the biggest immediate UX gap is the shell itself: theme support, responsive navigation, and in-app upload flows.
+The UI foundation work is now complete enough that the next best move is to formalize payroll approval, rejection, canonicalization, and member ownership rules before building the dedicated Payroll page.

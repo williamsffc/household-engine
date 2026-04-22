@@ -1,225 +1,240 @@
-# Household Engine — Current Step Plan
+# Step 15 — Payroll Approval / Canonical Workflow
 
-## Role of this document
+Current active step.
 
-This file is the **current step plan only**.
+## Context
 
-It should be:
-- short
-- actionable
-- sequential
-- updated whenever the active roadmap changes
+Household Engine is complete through Step 13 and is now best described as:
 
-It should not try to restate the entire architecture or full repo history.
-For target design, use `architecture.md`.
-For actual implemented state, use `handoff.md`.
+* V1-complete
+* plus selective V2-ready hardening
+* plus post-roadmap UI foundation refresh
 
----
+The app currently has:
 
-## Current state before this plan
+* local-first FastAPI + SQLite Hub
+* working Expenses ingest, analytics, and UI
+* working Payroll draft ingest, payroll APIs, and review queue backend/UI
+* shared cashflow analytics, trends, forecast, and portfolio summary endpoints
+* Overview, Expenses, and Review Queue UI pages
+* shared shell/theme foundation
+* responsive shared navigation
+* shared in-app upload component
+* Expenses UX refresh
+* Review Queue UX refresh
 
-Completed:
-- Step 1
-- Step 2
-- Step 2.5
-- Step 3
-- Step 3.5
-- Step 4A
-- Step 4B
-- Step 5A
-- Step 5B
-- Step 5C
-- Step 6
-- Step 7
-- Step 8
-- Step 9
-- Step 10
-- Step 11
-- Step 12
-- Step 13
+The biggest remaining functional gap is still payroll approve/reject + canonical approval flow.
 
-Project status now:
-- V1-complete
-- plus selective V2-ready hardening
+## Step 14A–14E status
 
----
+Completed enough.
 
-## Why the roadmap is changing now
+### Step 14A delivered
 
-Before building the dedicated Payroll page, the app needs a stronger shared UI foundation.
+* semantic theme tokens
+* light mode default
+* dark mode support
+* theme toggle
+* theme persistence
+* early theme init to reduce flash
+* shell/chart color cleanup
 
-The most important current UX issues are:
-- upload still feels too tied to file/folder handling instead of the app UI
-- navigation disappears on smaller browser widths
-- the current visual treatment is too dark
-- the app should support both light mode and dark mode
+### Step 14B delivered
 
-Because of that, the next slice should focus on the shared shell first, then payroll approval, then the Payroll page.
+* responsive shared navigation across large / medium / small widths
+* large-screen full sidebar
+* medium-screen collapsed icon rail
+* small-screen topbar + menu button + off-canvas drawer + backdrop
+* navigation no longer disappears on smaller widths
+* cache-busted shared shell assets so current CSS/JS reliably load in-browser
 
----
+### Step 14C delivered
 
-## Step 14A — Theme system + shell foundation
+* shared reusable in-app upload surface
+* drag-and-drop + click-to-upload behavior
+* upload states:
+  * idle
+  * drag-over
+  * uploading
+  * success
+  * error
+* Expenses upload placement
+* Review Queue upload placement
+* integration with existing document upload flow
 
-Goal:
-Create a reusable UI foundation instead of applying one-off styling fixes.
+### Step 14D delivered
 
-Build:
-- introduce semantic theme tokens / variables
-- support light mode and dark mode
-- make light mode the default starting direction unless existing implementation constraints strongly favor preserving current mode first
-- add a theme toggle in the app shell/header
-- persist theme preference locally
-- normalize shared surfaces:
-  - app background
-  - card / panel background
-  - borders
-  - primary / secondary / muted text
-  - status colors
-- normalize shared spacing, radii, shadows, and page header styling
+* clearer Expenses page hierarchy
+* labeled Upload panel at the top of Expenses
+* calmer loading states
+* partial-failure handling with inline banner instead of full-page failure
+* safer chart re-render behavior
+* better phone-width summary-card layout
 
-Done when:
-- the app can switch between light and dark mode
-- the shell looks coherent in both modes
-- pages no longer depend on one-off hardcoded dark styling assumptions
+### Step 14E delivered
 
----
+* clearer Review Queue hierarchy
+* labeled payroll upload panel
+* explicit explanation of `in_review` meaning
+* calmer loading states and partial-failure handling
+* more scannable selected-item detail layout
+* improved warning and redacted-text presentation
+* better small-screen readability
 
-## Step 14B — Responsive navigation overhaul
+## New product rule to lock in
 
-Goal:
-Make navigation adapt across browser sizes instead of disappearing.
+The app is **household-first**, but every payroll record belongs to exactly **one household member**.
 
-Build:
-- large screens: full sidebar with labels
-- medium screens: collapsed icon rail / compact sidebar
-- small screens: compact menu or drawer pattern
-- strong active-page state
-- ensure theme toggle remains reachable in responsive layouts
+That means:
 
-Done when:
-- navigation remains usable at smaller widths
-- users can still move between Overview, Expenses, and Review Queue without losing orientation
+* payroll documents/paystubs are tracked per person
+* approved payroll analytics must work both:
+  * per person
+  * household combined
+* household totals are the rollup of approved per-member payroll
+* the UI should later be able to support:
+  * Household view
+  * Person-M view
+  * Person-W view
 
----
+## Goal of Step 15
 
-## Step 14C — Shared in-app upload interaction layer
+Implement the payroll approval / canonical workflow.
 
-Goal:
-Move the primary file interaction into the product UI.
+This is not just about adding buttons.
 
-Build:
-- reusable drag-and-drop upload component
-- click-to-upload fallback
-- accepted file type guidance
-- drag / uploading / success / failure states
-- hook into existing upload/document-registry behavior
-- keep the component generic enough to reuse on future Payroll page
+This step should formalize how payroll moves from:
 
-Done when:
-- the app has a shared upload surface pattern usable by multiple pages
-- upload interactions feel app-driven rather than folder-driven
+* uploaded
+* processing
+* in_review
+* approved or rejected
 
----
+and how approved payroll becomes the canonical source for downstream analytics.
 
-## Step 14D — Expenses UX refresh
+## Required outcome
 
-Goal:
-Make Expenses feel like a complete in-app workflow.
+Implement a clean payroll approval flow that:
 
-Build:
-- add upload surface directly on `/expenses`
-- show clearer document / ingest feedback
-- align cards, charts, and tables with the new theme system
-- improve responsive behavior and smaller-width readability
-- tighten loading / empty / error states
+1. allows a draft payroll review item to be approved
+2. allows a draft payroll review item to be rejected
+3. preserves which household member the payroll belongs to
+4. ensures only approved payroll affects analytics
+5. makes household totals the rollup of approved per-member payroll
+6. keeps rejected items out of analytics
+7. stays honest about draft vs approved vs rejected state
 
-Done when:
-- users can upload expense documents directly from the Expenses page
-- the page remains usable across smaller browser sizes
-- the page visually fits the new shell direction
+## Product/data rule for this step
 
----
+Lock in this canonical rule:
 
-## Step 14E — Review Queue UX refresh
+* every payroll document/paystub must belong to exactly one household member
+* approved payroll remains tied to that specific member
+* household payroll analytics are the sum of approved paystubs across members
 
-Goal:
-Make Review Queue more useful and better aligned with the future payroll flow.
+This step should support the real use case:
 
-Build:
-- add payroll upload surface directly on `/review-queue`
-- improve pending-item list hierarchy
-- improve detail-panel readability
-- present validation warnings more clearly
-- clearly message that in-review payroll is draft-only and does not affect analytics until approval
+* uploading paystubs for Person-M
+* uploading paystubs for Person-W
+* tracking each person individually
+* still using one shared household finance command center
 
-Done when:
-- users can start payroll review from inside the Review Queue page
-- the page clearly communicates review state and next-step meaning
+## Scope guidance
 
----
+This step should focus on canonical payroll workflow, not the dedicated Payroll page yet.
 
-## Step 15 — Payroll approval / canonical workflow
+That means:
 
-Goal:
-Close the biggest remaining functional gap in the product.
+* build the approval/rejection flow
+* wire it into review queue behavior and payroll status handling
+* confirm analytics use only approved payroll
+* keep the UI additions modest and truthful
+* do not start the dedicated Payroll page yet
+* do not turn this into a large redesign
 
-Build:
-- approve payroll action
-- reject payroll action
-- route and service support for approval decisions
-- canonical payroll state transitions
-- analytics inclusion only after approval
-- audit logging for approval / rejection decisions
-- review queue updates that reflect the new decision states
+## Suggested focus areas
 
-Done when:
-- a payroll draft can move from in-review to approved or rejected
-- approved payroll contributes to analytics
-- rejected payroll does not
-- the workflow is explicit and review-driven
+### Approval / rejection actions
 
----
+Support workflow for review items:
 
-## Step 16 — Dedicated Payroll page / paystub examination UI
+* approve current draft
+* reject current draft
+* optionally capture a simple rejection reason if practical
 
-Goal:
-Add a payroll-focused page once the shell and approval model are ready.
+### Canonical state transitions
 
-Build:
-- `GET /payroll` UI page
-- payroll navigation entry
-- paystub list view
-- paystub detail / examination view
-- readable presentation of header fields and payroll lines
-- validation context
-- approval / rejection affordances if Step 15 is complete first
+Ensure state transitions are coherent across:
 
-Done when:
-- payroll has a dedicated first-class UI surface instead of living only through APIs plus Review Queue detail
+* `documents.status`
+* `payroll_paystubs.status`
+* review queue visibility
+* downstream analytics eligibility
 
----
+### Member ownership
 
-## Later, after Step 16
+Make sure approval preserves ownership by member.
 
-High-value later work can include:
-- persisted review artifacts
-- stronger scanned-PDF OCR
-- stronger payroll line extraction
-- portfolio UI
-- richer allocation planning
+The system should remain capable of later supporting:
 
----
+* combined household payroll analytics
+* Person-M payroll history
+* Person-W payroll history
 
-## Current build priority summary
+### Analytics correctness
 
-Do next in this order:
-1. Step 14A
-2. Step 14B
-3. Step 14C
-4. Step 14D
-5. Step 14E
-6. Step 15
-7. Step 16
+Reconfirm or adjust payroll analytics so that:
 
-One-line summary:
-First improve the shared shell and in-app upload experience, then implement payroll approval, then build the dedicated Payroll page.
+* only approved payroll counts
+* per-member monthly payroll works correctly
+* household combined payroll is a rollup of approved member payroll
+
+### Review Queue support
+
+The Review Queue should remain the place where payroll draft review occurs.
+
+If small UI additions are needed to support approval/rejection, keep them narrow and aligned with the existing page.
+
+## Files likely involved
+
+Review first:
+
+* `src/api/routes_review.py`
+* `src/api/routes_payroll.py`
+* `src/services/review_queue.py`
+* `src/payroll/repository.py`
+* `src/payroll/views.py`
+* migrations / SQL views if needed
+* `src/templates/review_queue.html`
+* `static/js/review_queue.js`
+
+Also inspect any member-related model/schema/table usage already present.
+
+## Deliverables for this step
+
+1. approve/reject workflow for payroll review items
+2. canonical status transitions
+3. approved payroll included in analytics correctly
+4. rejected payroll excluded correctly
+5. member ownership preserved through approval flow
+6. household-combined + per-member analytics model supported at the data level
+7. modest UI support in Review Queue if needed
+8. no regression to existing shell/upload/Expenses/Review Queue UX foundation
+
+## Constraints
+
+* keep changes incremental
+* no framework migration
+* no Tailwind rewrite
+* no dedicated Payroll page yet
+* no unrelated global redesign
+* keep the system local-first and honest about workflow state
+
+## What comes next after Step 15
+
+If Step 15 lands cleanly, the next roadmap order becomes:
+
+* Step 16 — Dedicated Payroll page / paystub examination UI
+* Step 17 — Better household-member selection UX
+* Step 18 — Review artifact + payroll quality improvements
+* Step 19 — Portfolio UI and richer household planning

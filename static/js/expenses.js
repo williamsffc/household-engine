@@ -29,7 +29,38 @@ function renderRows(el, rows, emptyText) {
   el.innerHTML = rows.join("");
 }
 
+function cssVar(name, fallback) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return v || fallback;
+}
+
+let _uploadMounted = false;
+let _chart = null;
+
 async function load() {
+  // Step 14C: in-app upload surface (expenses documents).
+  const uploadHost = document.getElementById("expenses-upload");
+  if (!_uploadMounted && uploadHost && window.HE && typeof window.HE.mountUploadSurface === "function") {
+    _uploadMounted = true;
+    window.HE.mountUploadSurface(uploadHost, {
+      title: "Upload expense document",
+      help: "Upload CSV/XLS/XLSX statements for the Expenses module. This registers the document in the system.",
+      moduleOwner: "expenses",
+      accept: ".csv,.xlsx,.xls",
+      onUploaded: async (payload) => {
+        const docId = payload?.document_id;
+        if (!docId) return;
+        try {
+          await fetch(`/api/expenses/documents/${docId}/ingest`, { method: "POST" });
+        } catch {
+          // Ignore; ingest errors will surface in later UX work (Step 14D).
+        }
+        // Reload the page data (not the upload UI).
+        await load();
+      },
+    });
+  }
+
   const monthTotalEl = document.getElementById("exp-card-month-total");
   const monthCountEl = document.getElementById("exp-card-month-count");
   const topCatEl = document.getElementById("exp-card-top-category");
@@ -38,15 +69,63 @@ async function load() {
 
   const categoriesEl = document.getElementById("exp-categories");
   const recentEl = document.getElementById("exp-recent");
+  const statusEl = document.getElementById("exp-status");
+  const metaEl = document.getElementById("exp-monthly-meta");
+  const emptyEl = document.getElementById("exp-monthly-empty");
+  const canvas = document.getElementById("exp-monthly-chart");
 
-  // Monthly view-backed expenses.
-  const monthly = await fetchJson("/api/expenses/monthly");
+  function setBannerError(message) {
+    if (!statusEl) return;
+    statusEl.innerHTML = `
+      <div class="banner banner--error">
+        <div class="banner__title">Expenses data unavailable</div>
+        <div class="banner__body">${escapeHtml(message || "Unknown error")}</div>
+      </div>
+    `;
+  }
+
+  function clearBanner() {
+    if (statusEl) statusEl.innerHTML = "";
+  }
+
+  // Loading placeholders (keeps page calm).
+  monthTotalEl.textContent = "—";
+  monthCountEl.textContent = "—";
+  topCatEl.textContent = "—";
+  topCatHintEl.textContent = "";
+  recentCountEl.textContent = "—";
+  if (categoriesEl) {
+    categoriesEl.innerHTML = `<div class="skeleton"><div class="skeleton__line"></div><div class="skeleton__line"></div><div class="skeleton__line"></div></div>`;
+  }
+  if (recentEl) {
+    recentEl.innerHTML = `<div class="skeleton"><div class="skeleton__line"></div><div class="skeleton__line"></div><div class="skeleton__line"></div></div>`;
+  }
+  if (metaEl) metaEl.textContent = "Loading…";
+  if (emptyEl) emptyEl.style.display = "none";
+  if (canvas) canvas.style.display = "block";
+
+  clearBanner();
+
+  let monthly = [];
+  try {
+    monthly = await fetchJson("/api/expenses/monthly");
+  } catch (e) {
+    setBannerError(e.message || String(e));
+    monthly = [];
+  }
+
   const latest = monthly && monthly.length ? monthly[0] : null;
   monthTotalEl.textContent = formatMoney(latest ? latest.total_expenses : 0);
   monthCountEl.textContent = String(latest ? latest.transaction_count : 0);
 
   // Category breakdown.
-  const categories = await fetchJson("/api/expenses/categories?limit=12");
+  let categories = [];
+  try {
+    categories = await fetchJson("/api/expenses/categories?limit=12");
+  } catch (e) {
+    setBannerError(e.message || String(e));
+    categories = [];
+  }
   const top = categories && categories.length ? categories[0] : null;
   topCatEl.textContent = top ? escapeHtml(top.category) : "—";
   topCatHintEl.textContent = top ? `${formatMoney(top.total_amount)} across ${top.transaction_count} txns` : "";
@@ -70,7 +149,13 @@ async function load() {
   );
 
   // Recent expense activity.
-  const recent = await fetchJson("/api/expenses/recent?limit=25");
+  let recent = [];
+  try {
+    recent = await fetchJson("/api/expenses/recent?limit=25");
+  } catch (e) {
+    setBannerError(e.message || String(e));
+    recent = [];
+  }
   recentCountEl.textContent = String((recent || []).length);
   renderRows(
     recentEl,
@@ -91,10 +176,6 @@ async function load() {
   );
 
   // Monthly trend chart.
-  const metaEl = document.getElementById("exp-monthly-meta");
-  const emptyEl = document.getElementById("exp-monthly-empty");
-  const canvas = document.getElementById("exp-monthly-chart");
-
   if (!monthly || monthly.length === 0) {
     emptyEl.style.display = "block";
     canvas.style.display = "none";
@@ -106,8 +187,19 @@ async function load() {
   const labels = rows.map((x) => x.month);
   const totals = rows.map((x) => Number(x.total_expenses || 0));
 
+  const grid = cssVar("--chart-grid", "rgba(15,23,42,0.12)");
+  const tick = cssVar("--color-text-muted", "#475569");
+  const legend = cssVar("--color-text-muted", "#475569");
+
   // eslint-disable-next-line no-undef
-  new Chart(canvas.getContext("2d"), {
+  if (_chart && typeof _chart.destroy === "function") {
+    try {
+      _chart.destroy();
+    } catch {
+      // ignore
+    }
+  }
+  _chart = new Chart(canvas.getContext("2d"), {
     type: "bar",
     data: {
       labels,
@@ -115,8 +207,8 @@ async function load() {
         {
           label: "Expenses",
           data: totals,
-          backgroundColor: "rgba(251,113,133,0.18)",
-          borderColor: "#fb7185",
+          backgroundColor: cssVar("--chart-expenses-fill", "rgba(220,38,38,0.12)"),
+          borderColor: cssVar("--chart-expenses", "#dc2626"),
           borderWidth: 1,
           borderRadius: 8,
         },
@@ -124,10 +216,10 @@ async function load() {
     },
     options: {
       responsive: true,
-      plugins: { legend: { labels: { color: "#cbd5e1" } } },
+      plugins: { legend: { labels: { color: legend } } },
       scales: {
-        x: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
-        y: { ticks: { color: "#94a3b8" }, grid: { color: "rgba(148,163,184,0.12)" } },
+        x: { ticks: { color: tick }, grid: { color: grid } },
+        y: { ticks: { color: tick }, grid: { color: grid } },
       },
     },
   });

@@ -4,23 +4,72 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Household Engine</title>
-    <link rel="stylesheet" href="/static/css/app.css" />
+    <script>
+      // Step 14A: apply theme early to avoid flash.
+      (() => {
+        try {
+          const key = "he-theme";
+          const stored = localStorage.getItem(key);
+          const valid = stored === "light" || stored === "dark";
+          const systemDark =
+            window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+          const theme = valid ? stored : systemDark;
+          document.documentElement.setAttribute("data-theme", theme);
+        } catch {
+          // ignore
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="/static/css/app.css?v=14b" />
   </head>
   <body>
-    <div class="app">
-      <aside class="sidebar">
-        <div class="sidebar__title">Household Engine</div>
-        <nav class="sidebar__nav">
-          {# lightweight active highlighting #}
-          <a class="sidebar__link {% if request and request.url.path == '/' %}sidebar__link--active{% endif %}" href="/">Overview</a>
-          <a class="sidebar__link {% if request and request.url.path.startswith('/expenses') %}sidebar__link--active{% endif %}" href="/expenses">Expenses</a>
-          <a class="sidebar__link {% if request and request.url.path.startswith('/review-queue') %}sidebar__link--active{% endif %}" href="/review-queue">Review Queue</a>
-        </nav>
-      </aside>
-      <main class="main">
-        {% block content %}{% endblock %}
-      </main>
+    <div class="app-shell">
+      <header class="topbar">
+        <button
+          id="nav-toggle"
+          class="icon-button icon-button--nav"
+          type="button"
+          aria-label="Open navigation"
+          aria-controls="sidebar"
+          aria-expanded="false"
+        >
+          <span class="icon-button__icon" aria-hidden="true">☰</span>
+          <span class="icon-button__label">Menu</span>
+        </button>
+        <div class="topbar__title">Household Engine</div>
+        <button id="theme-toggle" class="icon-button" type="button" aria-label="Toggle theme">
+          <span class="icon-button__icon" aria-hidden="true">◐</span>
+          <span class="icon-button__label">Theme</span>
+        </button>
+      </header>
+
+      <div class="app">
+        <aside id="sidebar" class="sidebar" aria-label="Primary navigation">
+          <div class="sidebar__title">Household Engine</div>
+          <nav class="sidebar__nav">
+            {# lightweight active highlighting #}
+            <a class="sidebar__link {% if request and request.url.path == '/' %}sidebar__link--active{% endif %}" href="/">
+              <span class="sidebar__icon" aria-hidden="true">⌂</span>
+              <span class="sidebar__label">Overview</span>
+            </a>
+            <a class="sidebar__link {% if request and request.url.path.startswith('/expenses') %}sidebar__link--active{% endif %}" href="/expenses">
+              <span class="sidebar__icon" aria-hidden="true">≡</span>
+              <span class="sidebar__label">Expenses</span>
+            </a>
+            <a class="sidebar__link {% if request and request.url.path.startswith('/review-queue') %}sidebar__link--active{% endif %}" href="/review-queue">
+              <span class="sidebar__icon" aria-hidden="true">✓</span>
+              <span class="sidebar__label">Review Queue</span>
+            </a>
+          </nav>
+        </aside>
+        <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
+
+        <main class="main">
+          {% block content %}{% endblock %}
+        </main>
+      </div>
     </div>
+    <script src="/static/js/app.js?v=14c"></script>
     {% block scripts %}{% endblock %}
   </body>
 </html>
