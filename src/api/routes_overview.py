@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import sqlite3
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter
 
@@ -18,6 +20,28 @@ from src.services.documents import get_recent_documents
 
 
 router = APIRouter(prefix="/api/overview", tags=["overview"])
+
+
+def _has_any_approved_payroll(conn: sqlite3.Connection) -> bool:
+    row = conn.execute(
+        "SELECT 1 AS ok FROM payroll_paystubs WHERE status = 'approved' LIMIT 1;"
+    ).fetchone()
+    return row is not None
+
+
+def _count_in_review_documents(conn: sqlite3.Connection) -> int:
+    row = conn.execute(
+        "SELECT COUNT(*) AS c FROM documents WHERE status = 'in_review';"
+    ).fetchone()
+    return int(row["c"] if row else 0)
+
+
+def _months_with_expense_activity(expense_rows: list[dict[str, Any]]) -> int:
+    return sum(
+        1
+        for r in expense_rows
+        if float(r.get("total_expenses") or 0) > 0 or int(r.get("transaction_count") or 0) > 0
+    )
 
 
 @router.get("/summary")
@@ -38,13 +62,88 @@ def overview_summary() -> dict:
             total_income = 0.0
             net_cashflow = round(float(total_income) - float(total_expenses), 2)
 
+        pending_reviews = _count_in_review_documents(conn)
+        payroll_ready = _has_any_approved_payroll(conn)
+
     return {
         "month": month,
         "total_income": total_income,
         "total_expenses": total_expenses,
         "net_cashflow": net_cashflow,
-        "pending_reviews": 0,
-        "payroll_ready": False,
+        "pending_reviews": pending_reviews,
+        "payroll_ready": payroll_ready,
+    }
+
+
+@router.get("/readiness")
+def overview_readiness() -> dict[str, Any]:
+    """Honest household data readiness for the Overview command center (Step 22).
+
+    No scoring — only statuses derived from existing DB views and portfolio availability.
+    """
+
+    with db_connection() as conn:
+        has_payroll = _has_any_approved_payroll(conn)
+        expense_rows = get_monthly_expenses(conn, limit=36)
+        months_exp = _months_with_expense_activity(expense_rows)
+        pending = _count_in_review_documents(conn)
+        portfolio = build_portfolio_summary(
+            conn,
+            trailing_months=3,
+            liquidity_reserve_months=1.0,
+        )
+
+    if months_exp >= 3:
+        exp_status = "ready"
+        exp_detail = f"{months_exp} month(s) with expense activity in analytics (trailing views are meaningful)."
+    elif months_exp >= 1:
+        exp_status = "limited"
+        exp_detail = (
+            f"Only {months_exp} month(s) of expense history so far — summaries and trailing averages are thin."
+        )
+    else:
+        exp_status = "missing"
+        exp_detail = "No expense months in analytics yet. Upload and ingest expense files to build history."
+
+    planning_ok = bool(portfolio.get("availability", {}).get("ok"))
+    if planning_ok:
+        planning_detail = (
+            "Deployable-surplus estimates can use approved payroll plus normalized expense cashflow."
+        )
+    else:
+        planning_detail = portfolio.get("availability", {}).get("reason") or "Portfolio inputs are limited."
+
+    return {
+        "approved_payroll": {
+            "status": "ready" if has_payroll else "missing",
+            "title": "Approved payroll",
+            "detail": (
+                "At least one approved paystub exists — household income analytics are grounded in payroll."
+                if has_payroll
+                else "No approved paystubs yet. Draft and in-review payroll does not count toward income."
+            ),
+        },
+        "expense_history": {
+            "status": exp_status,
+            "months_with_activity": months_exp,
+            "title": "Expense history",
+            "detail": exp_detail,
+        },
+        "review_queue": {
+            "status": "pending" if pending > 0 else "clear",
+            "count": pending,
+            "title": "Review queue",
+            "detail": (
+                f"{pending} document(s) waiting for approve/reject."
+                if pending
+                else "Nothing waiting in review."
+            ),
+        },
+        "planning": {
+            "status": "usable" if planning_ok else "limited",
+            "title": "Planning / portfolio",
+            "detail": planning_detail,
+        },
     }
 
 

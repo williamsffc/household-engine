@@ -33,10 +33,11 @@ Completed:
 * Step 18
 * Step 19
 * Step 20
+* Step 21
 
 Current active step:
 
-* Step 21 — Portfolio polish + persistent shell scroll behavior
+* Step 22 — Overview household readiness strip
 
 ## Current status
 
@@ -51,6 +52,7 @@ Household Engine is now:
 * plus improved payroll review artifact durability and traceability
 * plus Portfolio UI / modest household planning surface
 * plus Portfolio controls + recompute UX
+* plus persistent shell scroll behavior
 
 ## What is working now
 
@@ -131,6 +133,8 @@ Household Engine is now:
   * trailing_months
   * liquidity_reserve_months
 * recompute/apply UX exists
+* Reset to defaults exists
+* current assumptions summary exists
 * current control values are reflected in the URL query string
 * approved-only payroll semantics remain unchanged
 
@@ -154,6 +158,10 @@ Household Engine is now:
 * early theme initialization to reduce flash on load
 * shell/theme cleanup for hover, active-row, overlay, focus-visible, callout, codeblock, and banner/error token states
 * responsive shared navigation already exists across large / medium / small layouts
+* topbar/header is now persistent
+* navigation is now persistent
+* main content region is now the primary scrollable area
+* mobile drawer behavior remains in place with main scroll locking while open
 
 ### Shared upload interaction layer
 
@@ -225,16 +233,15 @@ This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
-### Portfolio / planning refinement
+### Overview / command-center refinement
 
-* no Reset to defaults control yet
-* no explicit current-assumptions summary yet
-* shell does not yet use the desired persistent-header/nav with scrollable-inner-page behavior
+* no dedicated household readiness strip yet on Overview
+* Overview does not yet surface a compact readiness summary for payroll / expenses / review queue / planning quality
 
 ### Payroll quality / later enhancements
 
+* payroll extraction quality still has room to improve
 * scanned-PDF/OCR robustness still needs improvement
-* payroll line detail can still be sparse
 
 ### Review queue / lifecycle refinements
 
@@ -252,17 +259,16 @@ This is the intended model for Person-M and Person-W going forward.
 
 Proceed with:
 
-* Step 21 — Portfolio polish + persistent shell scroll behavior
+* Step 22 — Overview household readiness strip
 
 Then:
 
-* Step 22 — Payroll extraction quality improvements
-* Step 23 — Scanned-PDF OCR support
-* Step 24 — Reopen / undo workflow for payroll decisions
-* Step 25 — Richer review artifact expansion
+* Step 23 — Payroll extraction quality improvements
+* Step 24 — Scanned-PDF OCR support
+* Step 25 — Reopen / undo workflow for payroll decisions
 
 ## Important current truth
 
-The app now has a usable Portfolio page and recompute controls, but the next best UX improvement is:
-* small Portfolio polish
-* plus a more stable command-center shell where header/nav stay persistent and the main page content scrolls
+The shell now behaves more like a stable command center, and the Portfolio page is polished enough for modest household planning.
+
+The next best move is to make the Overview page more explicit about overall household data readiness so the command-center metaphor becomes even stronger.

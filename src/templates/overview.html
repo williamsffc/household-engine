@@ -5,6 +5,14 @@
   <div class="page-subtitle">Local-only household command center</div>
 </header>
 
+<section class="readiness-strip" aria-label="Household data readiness">
+  <div class="readiness-strip__head">
+    <div class="readiness-strip__title">Household readiness</div>
+    <div class="readiness-strip__sub">Grounded in current database state — not a score or forecast.</div>
+  </div>
+  <div class="readiness-strip__grid" id="overview-readiness-grid" aria-live="polite"></div>
+</section>
+
 <section class="grid grid--cards">
   <div class="card">
     <div class="card__label">This month income (approved payroll)</div>
@@ -59,5 +67,5 @@
 
 {% block scripts %}
 <script src="/static/vendor/chart.min.js"></script>
-<script src="/static/js/overview.js"></script>
+<script src="/static/js/overview.js?v=22b"></script>
 {% endblock %}

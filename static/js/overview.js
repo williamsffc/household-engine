@@ -34,6 +34,73 @@ function cssVar(name, fallback) {
   return v || fallback;
 }
 
+function readinessPillClass(sectionKey, status) {
+  if (sectionKey === "approved_payroll") {
+    return status === "ready" ? "pill--ok" : "pill--danger";
+  }
+  if (sectionKey === "expense_history") {
+    if (status === "ready") return "pill--ok";
+    if (status === "limited") return "pill--limited";
+    return "pill--danger";
+  }
+  if (sectionKey === "review_queue") {
+    return status === "pending" ? "pill--review" : "pill--muted";
+  }
+  if (sectionKey === "planning") {
+    return status === "usable" ? "pill--ok" : "pill--limited";
+  }
+  return "pill--muted";
+}
+
+function readinessPillLabel(sectionKey, status, count) {
+  if (sectionKey === "approved_payroll") return status === "ready" ? "Ready" : "Missing";
+  if (sectionKey === "expense_history") {
+    if (status === "ready") return "Ready";
+    if (status === "limited") return "Limited";
+    return "Missing";
+  }
+  if (sectionKey === "review_queue") {
+    if (status === "pending") return count === 1 ? "1 pending" : `${count} pending`;
+    return "Clear";
+  }
+  if (sectionKey === "planning") return status === "usable" ? "Usable" : "Limited";
+  return status || "—";
+}
+
+function renderReadiness(data) {
+  const grid = document.getElementById("overview-readiness-grid");
+  if (!grid) return;
+
+  if (!data) {
+    grid.innerHTML = `<div class="readiness-item" style="grid-column: 1 / -1;">
+      <div class="readiness-item__detail">Readiness status unavailable. Other overview widgets may still load.</div>
+    </div>`;
+    return;
+  }
+
+  const keys = ["approved_payroll", "expense_history", "review_queue", "planning"];
+  grid.innerHTML = keys
+    .map((key) => {
+      const block = data[key] || {};
+      const title = escapeHtml(block.title || key);
+      const detail = escapeHtml(block.detail || "");
+      const status = block.status || "";
+      const count = Number(block.count || 0);
+      const pillLabel = escapeHtml(readinessPillLabel(key, status, count));
+      const pillClass = readinessPillClass(key, status);
+      return `
+        <div class="readiness-item">
+          <div class="readiness-item__top">
+            <div class="readiness-item__label">${title}</div>
+            <div class="pill ${pillClass}">${pillLabel}</div>
+          </div>
+          <div class="readiness-item__detail">${detail}</div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
 async function load() {
   const incomeEl = document.getElementById("card-income");
   const incomeHintEl = document.getElementById("card-income-hint");
@@ -44,11 +111,21 @@ async function load() {
   const recentDocsEl = document.getElementById("recent-docs");
   const pendingReviewEl = document.getElementById("pending-review");
 
+  const [summary, readinessRes] = await Promise.all([
+    fetchJson("/api/overview/summary"),
+    fetchJson("/api/overview/readiness").catch((e) => {
+      console.warn(e);
+      return null;
+    }),
+  ]);
+  renderReadiness(readinessRes);
+
   // Summary card uses view-backed overview summary (income is approved-only).
-  const summary = await fetchJson("/api/overview/summary");
   incomeEl.textContent = formatMoney(summary.total_income);
   expensesEl.textContent = formatMoney(summary.total_expenses);
   netEl.textContent = formatMoney(summary.net_cashflow);
+  // Align with /api/overview/readiness review_queue.count until the list loads.
+  pendingEl.textContent = String(summary.pending_reviews ?? 0);
 
   if (Number(summary.total_income || 0) <= 0) {
     incomeHintEl.style.display = "block";

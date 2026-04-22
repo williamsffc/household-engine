@@ -1,10 +1,10 @@
-# Step 21 — Portfolio Polish + Persistent Shell Scroll Behavior
+# Step 22 — Overview Household Readiness Strip
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 20 and is now best described as:
+Household Engine is complete through Step 21 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -15,6 +15,7 @@ Household Engine is complete through Step 20 and is now best described as:
 * plus improved payroll review artifact durability and traceability
 * plus Portfolio UI / modest household planning surface
 * plus Portfolio controls + recompute UX
+* plus persistent shell scroll behavior
 
 The app currently has:
 
@@ -33,8 +34,9 @@ The app currently has:
 * persisted payroll decision metadata
 * first-class Portfolio UI page
 * Portfolio controls for trailing months / liquidity reserve months
+* persistent topbar/nav with main-content scrolling
 
-## Step 14A–20 status
+## Step 14A–21 status
 
 Completed enough.
 
@@ -49,6 +51,8 @@ Delivered:
 * persisted payroll review artifacts + decision metadata
 * Portfolio UI backed by approved-payroll-only planning logic
 * Portfolio controls + recompute UX
+* Reset to defaults + current assumptions summary
+* persistent shell/topbar/nav with main content as the primary scroll region
 
 ## Product rule now locked in
 
@@ -56,138 +60,117 @@ The app is **household-first**.
 
 That means:
 
-* household planning remains a combined household surface
-* planning numbers must stay grounded in:
-  * approved payroll
-  * expenses / household cashflow
-* the UI must remain honest when outputs are conservative, limited, or unavailable
-* the shell should now feel more like a stable command-center frame
+* household cashflow and planning remain the top-level view
+* payroll and documents still belong to specific household members
+* the UI should stay honest about data readiness, incomplete inputs, and limited outputs
+* the Overview page should increasingly behave like a true command center
 
-## Goal of Step 21
+## Goal of Step 22
 
-Polish the Portfolio page and improve the app shell so the header/navigation remain persistent while the inner page content scrolls.
+Add a modest “household readiness” strip to the Overview page so the app surfaces the current state of household financial readiness in one place.
 
-This should make the app feel more stable and dashboard-like, especially on desktop, without overcomplicating mobile behavior.
+This should make it easier to answer questions like:
+
+* do we have approved payroll yet?
+* do we have enough expense history to trust recent summaries?
+* are there still items waiting in review?
+* is the household planning/portfolio layer operating on strong or limited inputs?
 
 ## Product intent
 
-This step has two tightly related goals:
+This step should improve clarity, not add complexity.
 
-### 1. Portfolio polish
+The readiness strip should:
 
-Add small usability improvements such as:
-
-* Reset to defaults
-* clearer current assumptions summary
-* cleaner small UX touches around recompute behavior
-
-### 2. Persistent shell behavior
-
-Refine the shared shell so that:
-
-* topbar/header remains persistent
-* navigation remains persistent
-* the main page content becomes the primary scrollable region
-
-This should improve orientation and usability across Overview, Expenses, Review Queue, Payroll, and Portfolio.
+* be quick to scan
+* feel calm and honest
+* summarize the current state of key data readiness signals
+* reinforce the command-center nature of the Overview page
 
 ## Required outcome
 
-### Portfolio polish
+Add an Overview readiness strip or equivalent top-level status area that communicates, in a modest way:
 
-1. add Reset to defaults control
-2. add a small “Current assumptions” summary
-3. preserve existing recompute behavior
-4. preserve honest limited/unavailable states
-5. preserve approved-payroll-only semantics
-
-### Shared shell refinement
-
-6. make header/topbar persistent
-7. keep navigation persistent
-8. make the inner main content area the primary scrollable region
-9. keep the experience clean on desktop
-10. avoid awkward nested-scroll behavior on smaller screens
+1. whether approved payroll is present
+2. whether there is recent expense coverage / useful expense history
+3. whether items are currently in review
+4. whether planning/portfolio outputs are likely strong vs limited
+5. clear, honest states rather than fake confidence
 
 ## Scope guidance
 
-This is a modest polish/refinement step, not a full shell rewrite.
+This is an Overview clarity step, not a new analytics engine.
 
 That means:
 
-* improve the Portfolio page a little
-* improve the shared shell scrolling behavior
-* keep the implementation incremental
-* do not redesign every page
-* do not create many competing scroll regions
+* build a modest readiness/status surface
+* reuse existing backend truth where possible
+* keep the UI lightweight and readable
+* do not invent fake scoring
+* do not redesign the whole Overview page
+* do not broaden into new portfolio logic
 * do not start payroll extraction work yet
 
 ## Suggested focus areas
 
-### Portfolio page
+### Readiness signals
 
-Add:
-* Reset to defaults
-* assumptions summary near the cards
-* small UX polish around control values and apply/recompute flow
+Potential readiness indicators include:
 
-### Shell layout
+* Approved payroll present / missing
+* Expense history coverage available / thin
+* Pending review items count
+* Planning input quality limited / usable
 
-Prefer:
-* persistent topbar
-* persistent sidebar/nav on desktop
-* main content region scrolls
-* careful behavior on medium/small screens so the app does not feel cramped
+### Overview placement
 
-### Responsiveness
+The strip should likely live high on the Overview page so it becomes part of the user’s first scan of the app.
 
-Be careful not to make mobile/tablet behavior worse.
+### Honesty
 
-A good result is:
-* desktop: stable shell, scrollable content region
-* small screens: still usable, not trapped in awkward nested scroll
+States should remain simple and truthful, for example:
+
+* Ready
+* Limited
+* Missing
+* Pending review
+
+Avoid fake numeric confidence or anything that implies more certainty than the system really has.
 
 ## Files likely involved
 
 Review first:
 
-* `src/templates/base.html`
-* `src/templates/portfolio.html`
-* `static/js/portfolio.js`
+* `src/templates/overview.html`
+* `static/js/overview.js`
 * `static/css/app.css`
+* `src/api/routes_overview.py`
 
-Potentially inspect page wrappers/layout structure across:
-* Overview
-* Expenses
-* Review Queue
-* Payroll
-* Portfolio
+Potentially inspect whether existing overview/portfolio/review summary data already provides enough signals before adding new endpoints.
 
 ## Deliverables for this step
 
-1. Reset to defaults control on Portfolio page
-2. current assumptions summary on Portfolio page
-3. persistent shell/topbar/nav behavior
-4. main content area as primary scroll region
-5. no regression to responsive shell behavior
-6. no regression to Portfolio planning semantics
-7. no regression to other current pages
+1. Overview readiness strip or equivalent status area
+2. honest household readiness signals
+3. no regression to current Overview page usability
+4. no regression to shell scroll behavior
+5. no regression to payroll/portfolio semantics
 
 ## Constraints
 
 * keep changes incremental
 * no framework migration
 * no Tailwind rewrite
-* no brokerage integrations
-* no advanced optimizer behavior
+* no fake scoring system
 * no unrelated global redesign
-* keep the system local-first and honest about assumptions/state
+* keep the system local-first and honest about readiness/limitations
 
-## What comes next after Step 21
+## What comes next after Step 22
 
-After Step 21, the next roadmap order becomes:
+After Step 22, the next roadmap order becomes:
 
-* Step 22 — Payroll extraction quality improvements
-* Step 23 — Scanned-PDF OCR support
-* Step 24 — Reopen / undo workflow for payroll decisions
-* Step 25 — Richer review artifact expansion
+* Step 23 — Payroll extraction quality improvements
+* Step 24 — Scanned-PDF OCR support
+* Step 25 — Reopen / undo workflow for payroll decisions
+
+Additional later work can still include richer review artifact expansion if it continues to look worthwhile.
