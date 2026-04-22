@@ -1,163 +1,226 @@
-# Step 13 — Advanced Hardening / V2
+# Household Engine — Handoff / Current Repo Truth (Updated)
 
-Completed.
+## Purpose of this document
 
-### Chosen hardening targets
+This file is the **current repo truth / actual implemented state**.
 
-This step intentionally chose a **small, high-value subset** of deferred V2 work:
+It should describe:
+- what is already built
+- what routes/pages exist now
+- what behavior is already real
+- what is still missing
+- what the next development slice should focus on
 
-1. richer document review UX
-2. modest stronger local-network controls
-
-These were chosen because they fit the current repo state, improve trust/usability, and avoid broad redesign or misleading semantics.
-
-### Implemented
-
-#### Review Queue UX
-
-* `GET /review-queue` UI page
-* `src/templates/review_queue.html`
-* `static/js/review_queue.js`
-* `src/api/routes_ui.py` updated to serve the Review Queue page
-* `src/templates/base.html` updated with Review Queue navigation
-
-#### Local-only guardrail
-
-* `src/core/settings.py`
-* `src/core/security.py`
-* `src/main.py` updated to wire local-only middleware
-
-### Behavior
-
-#### Review Queue UX
-
-* the Review Queue now has a usable read-only UI
-* it consumes the existing backend review APIs:
-
-  * `GET /api/review-queue`
-  * `GET /api/review-queue/{document_id}`
-* the page allows a user to:
-
-  * see pending `in_review` documents
-  * click an item
-  * view redacted text
-  * view redaction counts
-  * view validation warnings
-  * view draft paystub and draft lines
-
-#### Local-only guardrail
-
-* by default, the app rejects non-loopback requests with a 403 JSON response
-* this is a local-first guardrail, not a full auth system
-* intentional override is available via:
-
-  * `HOUSEHOLD_ALLOW_REMOTE=1`
-
-### Important Step 13 notes
-
-* approve/reject workflow was still intentionally deferred
-* visual PDF redaction was still intentionally deferred
-* field-level confidence scoring was still intentionally deferred
-* this step focused on selective hardening, not broad V2 sprawl
-
-### Result
-
-The system now has:
-
-* a usable Review Queue UI on top of the existing backend review path
-* a modest local-network guardrail aligned with the project’s local-first design
-
-This completes the roadmap as currently defined.
+It should not be used as the long-term architecture blueprint.
+For target design, use `architecture.md`.
+For the immediate active step plan, use `Pasted_text.md`.
 
 ---
 
-## Current Implemented Routes
+## Current status
 
-### UI
+Household Engine is currently:
+- **V1-complete**
+- plus **selective V2-ready hardening**
+- local-first
+- FastAPI + SQLite based
+- usable through Overview, Expenses, and Review Queue pages
 
-* `GET /`
-* `GET /expenses`
-* `GET /review-queue`
-
-### Overview API
-
-* `GET /api/overview/summary`
-* `GET /api/overview/recent-documents`
-* `GET /api/overview/cashflow`
-* `GET /api/overview/trends`
-* `GET /api/overview/forecast`
-* `GET /api/overview/portfolio`
-
-### Expenses API
-
-* `GET /api/expenses/transactions`
-* `GET /api/expenses/monthly`
-* `GET /api/expenses/categories`
-* `GET /api/expenses/recent`
-* `POST /api/expenses/documents/{document_id}/ingest`
-
-### Payroll API
-
-* `POST /api/payroll/documents/{document_id}/ingest`
-* `GET /api/payroll/paystubs`
-* `GET /api/payroll/paystubs/{paystub_id}`
-* `GET /api/payroll/monthly`
-
-### Review Queue API
-
-* `GET /api/review-queue`
-* `GET /api/review-queue/{document_id}`
+Step 13 is complete.
 
 ---
 
-## What Is Not Implemented Yet
+## What is implemented now
+
+### Shared Hub
+
+Implemented:
+- FastAPI app shell
+- SQLite database setup
+- WAL mode
+- migration runner
+- document upload and registry
+- process / reprocess support
+- document metadata tracking
+- file hashing
+- audit logging
+- processing runs support
+- modest local-only middleware guardrail
+
+### Expenses
+
+Implemented:
+- expense ingest pipeline
+- parsers and categorization
+- anomaly support
+- expense repository logic
+- expense routes
+- monthly / categories / recent / summary read models
+- Expenses UI page
+
+Current user-facing state:
+- backend works
+- analytics work
+- dashboard experience exists
+- expense upload is still more backend-oriented than ideal from the UI perspective
 
 ### Payroll
 
-* no approve/reject payroll workflow yet
-* no canonical payroll approval flow yet
-* no robust scanned-PDF OCR yet
-* no strong payroll line-item extraction yet
-* no payroll member trend routes yet
+Implemented:
+- payroll tables and migrations
+- payroll draft ingest pipeline
+- native PDF extraction
+- OCR fallback path
+- PII scrubbing
+- heuristic extraction / validation behavior
+- draft persistence
+- payroll ingest route
+- payroll list/detail APIs
+- monthly payroll aggregation API
 
-### Review queue
+Current user-facing state:
+- payroll can be ingested into draft / in-review state
+- payroll review payloads are visible
+- approved payroll workflow does **not** exist yet
 
-* no approve endpoint yet
-* no reject endpoint yet
-* no persisted redacted review payload yet
+### Review Queue
 
-### Portfolio / V2
+Implemented:
+- review queue backend
+- review queue detail payloads
+- Review Queue UI page
+- display of metadata, redacted text, redaction counts, warnings, draft paystub, and draft lines
 
-* no portfolio UI yet
-* no brokerage integrations
-* no richer allocation planning layer
-* no balance-aware surplus model
+Current user-facing state:
+- readable review surface exists
+- it is still effectively read-only for payroll decisions
 
-### Deferred advanced items
+### Overview / analytics
 
-* no visual PDF redaction
-* no field-level extraction confidence
-* no full auth / user-role system
-* no broader advanced anomaly scoring yet
+Implemented:
+- summary endpoint
+- cashflow endpoint
+- recent-documents endpoint
+- trends endpoint
+- forecast endpoint
+- portfolio / deployable-surplus endpoint
+- Overview UI page
+
+Important current rule preserved:
+- only approved payroll counts toward analytics
+- current draft payroll contributes zero income
 
 ---
 
-## Project status
+## Current implemented routes
 
-The project is now:
+### UI
 
-* **V1-complete**
-* plus **selective V2-ready hardening**
+- `GET /`
+- `GET /expenses`
+- `GET /review-queue`
 
-Core outcomes achieved:
+### Overview API
 
-* local-first shared Hub
-* working Expenses spoke
-* working Payroll draft/review-oriented spoke
-* shared analytics and cashflow views
-* Overview UI
-* Expenses UI
-* Review Queue UI
-* modest trend / forecast layer
-* modest portfolio / deployable-surplus layer
-* selective hardening without uncontrolled V2 sprawl
+- `GET /api/overview/summary`
+- `GET /api/overview/recent-documents`
+- `GET /api/overview/cashflow`
+- `GET /api/overview/trends`
+- `GET /api/overview/forecast`
+- `GET /api/overview/portfolio`
+
+### Expenses API
+
+- `GET /api/expenses/transactions`
+- `GET /api/expenses/monthly`
+- `GET /api/expenses/categories`
+- `GET /api/expenses/recent`
+- `POST /api/expenses/documents/{document_id}/ingest`
+
+### Payroll API
+
+- `POST /api/payroll/documents/{document_id}/ingest`
+- `GET /api/payroll/paystubs`
+- `GET /api/payroll/paystubs/{paystub_id}`
+- `GET /api/payroll/monthly`
+
+### Review Queue API
+
+- `GET /api/review-queue`
+- `GET /api/review-queue/{document_id}`
+
+---
+
+## What is not implemented yet
+
+### Payroll workflow gaps
+
+Not implemented yet:
+- payroll approve action
+- payroll reject action
+- canonical payroll approval flow
+- approval-driven audit semantics
+- dedicated Payroll page / paystub examination UI
+
+### Review and extraction gaps
+
+Not implemented yet:
+- persisted review artifacts
+- robust scanned-PDF OCR
+- stronger payroll line-item extraction
+- visual PDF redaction
+- field-level extraction confidence
+
+### Portfolio / broader V2 gaps
+
+Not implemented yet:
+- portfolio UI
+- brokerage integrations
+- richer allocation planning layer
+- balance-aware surplus model
+- richer auth / user-role system
+
+---
+
+## New immediate product/UI observations
+
+The next iteration should acknowledge these UX realities:
+
+1. **Upload should move into the UI**
+   - users should interact through app pages rather than folder structure
+   - Expenses should gain an in-page upload surface
+   - Review Queue should gain an in-page payroll upload surface
+
+2. **Navigation needs responsive behavior**
+   - current navigation disappearing on smaller browser widths is a real UX issue
+   - nav should collapse or transform, not vanish
+
+3. **The current visual theme is too dark**
+   - the next slice should introduce proper light/dark theme support instead of one-off color tweaks
+
+4. **A dedicated Payroll page should follow, not lead**
+   - first stabilize shell, theme, navigation, and upload UX
+   - then add payroll approval workflow
+   - then add Payroll page / paystub examination UI
+
+---
+
+## Recommended next build sequence
+
+The next development slice should be:
+
+1. **Theme system + shell foundation**
+2. **Responsive navigation overhaul**
+3. **Shared in-app upload component**
+4. **Expenses UX refresh**
+5. **Review Queue UX refresh**
+6. **Payroll approval / canonical workflow**
+7. **Dedicated Payroll page / paystub examination UI**
+
+This sequencing fits the repo’s current state better than jumping immediately into the Payroll page.
+
+---
+
+## Current repo summary in one paragraph
+
+The repo currently provides a working local-first Hub, a functioning Expenses module, a functioning payroll draft/review-oriented backend, a usable Review Queue UI, shared cashflow and forecasting outputs, and selective V2 hardening. The biggest remaining functional gap is payroll approval / canonicalization, while the biggest immediate UX gap is the shell itself: theme support, responsive navigation, and in-app upload flows.
