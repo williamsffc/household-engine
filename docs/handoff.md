@@ -34,10 +34,11 @@ Completed:
 * Step 19
 * Step 20
 * Step 21
+* Step 22
 
 Current active step:
 
-* Step 22 — Overview household readiness strip
+* Step 23 — Payroll extraction quality improvements
 
 ## Current status
 
@@ -53,6 +54,7 @@ Household Engine is now:
 * plus Portfolio UI / modest household planning surface
 * plus Portfolio controls + recompute UX
 * plus persistent shell scroll behavior
+* plus Overview household readiness strip
 
 ## What is working now
 
@@ -144,6 +146,13 @@ Household Engine is now:
 * overview dashboard UI
 * trend / forecast endpoints
 * portfolio / deployable-surplus endpoint
+* overview readiness endpoint/strip exists
+* readiness reflects:
+  * approved payroll presence
+  * expense-history coverage
+  * in-review queue depth
+  * planning availability
+* `/api/overview/summary` now returns truthful pending_reviews and payroll_ready
 * payroll analytics remain approved-only
 * household totals remain the rollup of approved per-member payroll
 
@@ -189,6 +198,7 @@ Household Engine is now:
 * `GET /api/overview/trends`
 * `GET /api/overview/forecast`
 * `GET /api/overview/portfolio`
+* `GET /api/overview/readiness`
 
 ### Expenses API
 
@@ -233,14 +243,10 @@ This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
-### Overview / command-center refinement
+### Payroll quality / next improvements
 
-* no dedicated household readiness strip yet on Overview
-* Overview does not yet surface a compact readiness summary for payroll / expenses / review queue / planning quality
-
-### Payroll quality / later enhancements
-
-* payroll extraction quality still has room to improve
+* payroll extraction quality still has room to improve on the native-text path
+* payroll line detail can still be sparse
 * scanned-PDF/OCR robustness still needs improvement
 
 ### Review queue / lifecycle refinements
@@ -259,16 +265,15 @@ This is the intended model for Person-M and Person-W going forward.
 
 Proceed with:
 
-* Step 22 — Overview household readiness strip
+* Step 23 — Payroll extraction quality improvements
 
 Then:
 
-* Step 23 — Payroll extraction quality improvements
 * Step 24 — Scanned-PDF OCR support
 * Step 25 — Reopen / undo workflow for payroll decisions
 
 ## Important current truth
 
-The shell now behaves more like a stable command center, and the Portfolio page is polished enough for modest household planning.
+The command-center shell and Overview clarity are now in good shape.
 
-The next best move is to make the Overview page more explicit about overall household data readiness so the command-center metaphor becomes even stronger.
+The next best move is to improve payroll extraction quality on the existing native-text path before adding OCR complexity.

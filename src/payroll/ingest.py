@@ -7,7 +7,7 @@ from pathlib import Path
 from src.core.database import db_connection, get_repo_root
 from src.payroll.extractor_ocr import OcrUnavailableError, ocr_image
 from src.payroll.extractor_pdf import extract_text_from_pdf
-from src.payroll.normalizer import DraftPayrollLine, DraftPaystub, find_first_money, parse_date_any, parse_money
+from src.payroll.normalizer import DraftPayrollLine, DraftPaystub, parse_date_any, parse_money
 from src.payroll.pii_scrubber import scrub_pii
 from src.payroll.repository import delete_draft_for_document, fetch_document, insert_draft_lines, insert_draft_paystub
 from src.payroll.validator import validate_paystub
@@ -18,37 +18,67 @@ class PayrollIngestError(RuntimeError):
     pass
 
 
-def _infer_basic_fields_from_text(text: str) -> tuple[str | None, str | None, str | None, float | None, float | None]:
-    """Heuristic extraction to create a minimal draft without LLM (Step 5B).
+# Money token: optional $, optional parens for negatives, commas, 2 decimal places.
+_MONEY_TOKEN_RE = re.compile(
+    r"\(?\$?\s*[\d,]+(?:\.\d{2})?\s*\)?",
+    re.MULTILINE,
+)
 
-    Returns: pay_date, period_start, period_end, gross_pay, net_pay
-    """
+# Lines whose entire label is a table header (not a line item).
+_HEADER_LABELS = frozenset(
+    {
+        "description",
+        "amount",
+        "current",
+        "ytd",
+        "rate",
+        "hours",
+        "this period",
+        "year to date",
+        "earnings",
+        "deductions",
+        "taxes",
+        "tax",
+        "before tax deductions",
+        "after tax deductions",
+        "employee",
+        "employer",
+        "totals",
+        "total",
+    }
+)
+
+
+def _nonempty_lines(text: str) -> list[str]:
+    return [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
+
+
+def _line_has_ytd(line: str) -> bool:
+    return bool(re.search(r"\bytd\b|\byear\s*to\s*date\b", line, re.I))
+
+
+def _infer_pay_date(text: str) -> str | None:
+    """Resolve pay / check date from stub text (native path)."""
 
     t = text or ""
+    pay_date: str | None = None
 
-    # Try pay date.
-    pay_date = None
-    pay_date_hits: list[str] = []
-
-    # First: inline label anywhere in a line (many paystubs put multiple fields on one line).
+    # Inline label (single line or wrapped).
     m = re.search(
-        r"(?im)\bpay\s*date\b\s*[:\-]?\s*([0-9]{1,2}[/-][0-9]{1,2}[/-][0-9]{2,4}|[A-Za-z]{3,9}\s+\d{1,2},\s+\d{4}|\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4})",
+        r"(?im)\b(?:pay|check|payment)\s*date\b\s*[:\-]?\s*"
+        r"([0-9]{1,2}[/-][0-9]{1,2}[/-][0-9]{2,4}|[A-Za-z]{3,9}\s+\d{1,2},\s+\d{4}|\d{1,2}\s+[A-Za-z]{3,9}\s+\d{4})",
         t,
     )
     if m:
-        raw = m.group(1).strip()
-        pay_date_hits.append(raw)
-        pay_date = parse_date_any(raw)
+        pay_date = parse_date_any(m.group(1).strip())
 
     pay_date_label_patterns = [
-        # Common
         r"(?im)^\s*pay\s*date\s*[:\-]?\s*(.+?)\s*$",
         r"(?im)^\s*date\s*paid\s*[:\-]?\s*(.+?)\s*$",
         r"(?im)^\s*check\s*date\s*[:\-]?\s*(.+?)\s*$",
         r"(?im)^\s*payment\s*date\s*[:\-]?\s*(.+?)\s*$",
         r"(?im)^\s*paid\s*on\s*[:\-]?\s*(.+?)\s*$",
         r"(?im)^\s*payday\s*[:\-]?\s*(.+?)\s*$",
-        # Variants seen in some stubs
         r"(?im)^\s*issue\s*date\s*[:\-]?\s*(.+?)\s*$",
         r"(?im)^\s*pay\s*date\s*/\s*check\s*date\s*[:\-]?\s*(.+?)\s*$",
     ]
@@ -59,12 +89,11 @@ def _infer_basic_fields_from_text(text: str) -> tuple[str | None, str | None, st
         if not m:
             continue
         raw = m.group(1).strip()
-        pay_date_hits.append(raw)
         pay_date = parse_date_any(raw)
         if pay_date:
             break
+
     if not pay_date:
-        # fallback: first recognizable date in doc
         m = re.search(r"\b(\d{4}-\d{2}-\d{2})\b", t)
         if m:
             pay_date = parse_date_any(m.group(1))
@@ -72,69 +101,327 @@ def _infer_basic_fields_from_text(text: str) -> tuple[str | None, str | None, st
             m = re.search(r"\b(\d{1,2}/\d{1,2}/\d{2,4})\b", t)
             if m:
                 pay_date = parse_date_any(m.group(1))
-        if not pay_date:
-            m = re.search(r"\b(\d{4}/\d{2}/\d{2})\b", t)
-            if m:
-                pay_date = parse_date_any(m.group(1))
-        if not pay_date:
-            # Month-name fallback: e.g., "Apr 15, 2026"
-            m = re.search(r"\b([A-Za-z]{3,9}\s+\d{1,2},\s+\d{4})\b", t)
-            if m:
-                pay_date = parse_date_any(m.group(1))
+    if not pay_date:
+        m = re.search(r"\b(\d{4}/\d{2}/\d{2})\b", t)
+        if m:
+            pay_date = parse_date_any(m.group(1))
+    if not pay_date:
+        m = re.search(r"\b([A-Za-z]{3,9}\s+\d{1,2},\s+\d{4})\b", t)
+        if m:
+            pay_date = parse_date_any(m.group(1))
 
-    # Pay period.
-    period_start = None
-    period_end = None
+    return pay_date
+
+
+def _infer_pay_period(text: str) -> tuple[str | None, str | None]:
+    """Extract pay period start/end when present."""
+
+    t = text or ""
+    period_start: str | None = None
+    period_end: str | None = None
+
+    # Range on one line near "pay period" / "for period".
+    m = re.search(
+        r"(?is)(?:pay\s*period|period\s*(?:covered|ending)?|for\s+period)\s*[:.\s-]*"
+        r"\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s*(?:to|through|[-–—])\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
+        t,
+    )
+    if m:
+        period_start = parse_date_any(m.group(1))
+        period_end = parse_date_any(m.group(2))
+        if period_start and period_end:
+            return period_start, period_end
+
     m = re.search(r"(?im)\bpay\s*period\b\s*[:\-]?\s*(.+)$", t)
     if m:
-        # Try split "MM/DD/YYYY - MM/DD/YYYY"
         rhs = m.group(1).strip()
-        m2 = re.search(r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s*(?:to|\-)\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})", rhs)
+        m2 = re.search(
+            r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})\s*(?:to|\-|–|—)\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
+            rhs,
+        )
         if m2:
             period_start = parse_date_any(m2.group(1))
             period_end = parse_date_any(m2.group(2))
 
-    for label, target in [
+    label_map = [
+        ("period beginning", "start"),
+        ("pay period start", "start"),
         ("period start", "start"),
         ("start date", "start"),
+        ("begin date", "start"),
+        ("period ending", "end"),
+        ("pay period end", "end"),
         ("period end", "end"),
         ("end date", "end"),
-    ]:
+    ]
+    for label, slot in label_map:
         m = re.search(rf"(?im)\b{re.escape(label)}\b\s*[:\-]?\s*(.+)$", t)
         if not m:
             continue
         d = parse_date_any(m.group(1))
         if not d:
             continue
-        if target == "start" and not period_start:
+        if slot == "start" and not period_start:
             period_start = d
-        if target == "end" and not period_end:
+        if slot == "end" and not period_end:
             period_end = d
 
-    # Gross / net.
-    gross_pay = None
-    net_pay = None
+    return period_start, period_end
+
+
+def _money_from_labeled_line(lines: list[str], patterns: list[str], *, skip_ytd_lines: bool) -> float | None:
+    """Find the strongest match for gross or net across lines (prefer non-YTD rows, then 'total')."""
+
+    best_val: float | None = None
+    best_rank = -1
+
+    for line in lines:
+        if skip_ytd_lines and _line_has_ytd(line):
+            continue
+        lower = line.lower()
+        for pat in patterns:
+            m = re.search(pat, line, re.I)
+            if not m:
+                continue
+            val = parse_money(m.group(1))
+            if val is None:
+                continue
+            rank = 1
+            if "total" in lower:
+                rank = 3
+            elif "gross" in lower or "net" in lower:
+                rank = 2
+            if rank > best_rank:
+                best_rank = rank
+                best_val = val
+            break
+
+    return best_val
+
+
+def _infer_gross_pay(text: str, lines: list[str]) -> float | None:
+    patterns = [
+        r"(?i)\b(?:total\s+)?gross(?:\s+pay|\s+earnings)?\b\s*[:\-]?\s*(\(?\$?\s*[\d,]+(?:\.\d{2})?\s*\)?)",
+        r"(?i)\bgross\s*(?:pay|earnings)\b\s*[:\-]?\s*(\(?\$?\s*[\d,]+(?:\.\d{2})?\s*\)?)",
+        r"(?i)\btotal\s+earnings\b\s*[:\-]?\s*(\(?\$?\s*[\d,]+(?:\.\d{2})?\s*\)?)",
+    ]
+    v = _money_from_labeled_line(lines, patterns, skip_ytd_lines=True)
+    if v is not None:
+        return v
+
     for pat in [
         r"(?im)\bgross\s*pay\b\s*[:\-]?\s*([$\(\)\d,.\s-]+)$",
         r"(?im)\btotal\s*gross\b\s*[:\-]?\s*([$\(\)\d,.\s-]+)$",
     ]:
-        m = re.search(pat, t)
+        m = re.search(pat, text or "")
         if m:
-            gross_pay = parse_money(m.group(1))
-            if gross_pay is not None:
-                break
+            got = parse_money(m.group(1))
+            if got is not None:
+                return got
+    return None
+
+
+def _infer_net_pay(text: str, lines: list[str]) -> float | None:
+    patterns = [
+        r"(?i)\bnet\s*pay\b\s*[:\-]?\s*(\(?\$?\s*[\d,]+(?:\.\d{2})?\s*\)?)",
+        r"(?i)\btotal\s+net\b\s*[:\-]?\s*(\(?\$?\s*[\d,]+(?:\.\d{2})?\s*\)?)",
+        r"(?i)\btake[\s-]*home(?:\s+pay)?\b\s*[:\-]?\s*(\(?\$?\s*[\d,]+(?:\.\d{2})?\s*\)?)",
+        r"(?i)\bamount\s+payable\b\s*[:\-]?\s*(\(?\$?\s*[\d,]+(?:\.\d{2})?\s*\)?)",
+        r"(?i)\bnet\s+amount\b\s*[:\-]?\s*(\(?\$?\s*[\d,]+(?:\.\d{2})?\s*\)?)",
+    ]
+    # Do not skip YTD-tagged lines: many stubs put Current and YTD on the same "Net pay" row.
+    v = _money_from_labeled_line(lines, patterns, skip_ytd_lines=False)
+    if v is not None:
+        return v
 
     for pat in [
         r"(?im)\bnet\s*pay\b\s*[:\-]?\s*([$\(\)\d,.\s-]+)$",
         r"(?im)\btotal\s*net\b\s*[:\-]?\s*([$\(\)\d,.\s-]+)$",
     ]:
-        m = re.search(pat, t)
+        m = re.search(pat, text or "")
         if m:
-            net_pay = parse_money(m.group(1))
-            if net_pay is not None:
-                break
+            got = parse_money(m.group(1))
+            if got is not None:
+                return got
+    return None
 
+
+def _infer_basic_fields_from_text(text: str) -> tuple[str | None, str | None, str | None, float | None, float | None]:
+    """Heuristic extraction for draft paystub fields (native text, Step 23)."""
+
+    lines = _nonempty_lines(text)
+    pay_date = _infer_pay_date(text)
+    period_start, period_end = _infer_pay_period(text)
+    gross_pay = _infer_gross_pay(text, lines)
+    net_pay = _infer_net_pay(text, lines)
     return pay_date, period_start, period_end, gross_pay, net_pay
+
+
+def _normalize_line_description(raw: str) -> str:
+    s = re.sub(r"\s+", " ", (raw or "").strip())
+    return s.strip(" :.-—")
+
+
+def _categorize_line(description: str) -> str:
+    d = description.lower()
+    if any(
+        x in d
+        for x in (
+            "federal",
+            "state inc",
+            "state tax",
+            "fica",
+            "medicare",
+            "social sec",
+            "social security",
+            "ss ee",
+            "eic",
+            "local tax",
+            "city tax",
+            "oasdi",
+            "withholding tax",
+        )
+    ):
+        return "tax"
+    if " tax" in d or d.endswith("tax") or d.startswith("tax "):
+        return "tax"
+    if any(
+        x in d
+        for x in (
+            "401",
+            "403",
+            "hsa",
+            "fsa",
+            "health ins",
+            "medical",
+            "dental",
+            "vision",
+            "life ins",
+            "disability",
+            "garnish",
+            "child support",
+            "union",
+            "dues",
+            "pension",
+            "roth",
+            "deferral",
+            "cafeteria",
+            "pre-tax",
+            "pretax",
+        )
+    ):
+        return "deduction"
+    if any(
+        x in d
+        for x in (
+            "regular",
+            "salary",
+            "hourly",
+            "overtime",
+            " ot",
+            "bonus",
+            "commission",
+            "vacation",
+            "pto",
+            "sick",
+            "holiday",
+            "bereavement",
+            "earning",
+            "wage",
+            "pay",
+        )
+    ):
+        return "earning"
+    return "earning"
+
+
+def _parse_line_with_trailing_amounts(line: str) -> tuple[str, float, float | None] | None:
+    """Parse 'Description  current [ytd]' when trailing tokens look like money."""
+
+    matches = list(_MONEY_TOKEN_RE.finditer(line))
+    if not matches:
+        return None
+    # Hours × rate × amount rows often expose 3+ currency-like tokens; skip to reduce junk lines.
+    if len(matches) >= 3:
+        return None
+
+    if len(matches) >= 2:
+        m_cur, m_ytd = matches[-2], matches[-1]
+        desc = line[: m_cur.start()].strip()
+        cur = parse_money(m_cur.group(0))
+        ytd = parse_money(m_ytd.group(0))
+    else:
+        m0 = matches[-1]
+        desc = line[: m0.start()].strip()
+        cur = parse_money(m0.group(0))
+        ytd = None
+
+    if cur is None:
+        return None
+
+    desc_n = _normalize_line_description(desc)
+    if len(desc_n) < 3:
+        return None
+    if desc_n.lower() in _HEADER_LABELS:
+        return None
+    if re.fullmatch(r"[\d\s$,.-]+", desc_n):
+        return None
+    if re.match(r"^(page|continued|www\.|http)\b", desc_n, re.I):
+        return None
+
+    return desc_n, cur, ytd
+
+
+def _extract_payroll_lines_from_text(text: str, *, max_lines: int = 55) -> tuple[list[DraftPayrollLine], float | None]:
+    """Extract draft line items from native stub text (conservative heuristics)."""
+
+    lines_in = _nonempty_lines(text)
+    out: list[DraftPayrollLine] = []
+    seen: set[tuple[str, float]] = set()
+    taxes_deds = 0.0
+    have_td = False
+
+    for raw_line in lines_in:
+        if len(out) >= max_lines:
+            break
+        if _line_has_ytd(raw_line) and re.search(r"\b(total|gross|net)\b", raw_line, re.I):
+            continue
+
+        parsed = _parse_line_with_trailing_amounts(raw_line)
+        if parsed is None:
+            continue
+        desc, amount, ytd_amount = parsed
+
+        if abs(amount) > 9_999_999 or (ytd_amount is not None and abs(ytd_amount) > 9_999_999):
+            continue
+        if abs(amount) < 0.005 and (ytd_amount is None or abs(ytd_amount) < 0.005):
+            continue
+
+        key = (desc.lower(), round(amount, 2))
+        if key in seen:
+            continue
+        seen.add(key)
+
+        cat = _categorize_line(desc)
+        if cat in ("tax", "deduction") and amount > 0:
+            taxes_deds += amount
+            have_td = True
+        elif cat in ("tax", "deduction") and amount < 0:
+            taxes_deds += abs(amount)
+            have_td = True
+
+        out.append(
+            DraftPayrollLine(
+                category=cat,
+                description=desc,
+                amount=amount,
+                ytd_amount=ytd_amount,
+                display_order=len(out),
+            )
+        )
+
+    td_total = round(taxes_deds, 2) if have_td else None
+    return out, td_total
 
 
 def _looks_like_scanned_pdf(*, page_count: int, extracted_text: str) -> bool:
@@ -143,10 +430,22 @@ def _looks_like_scanned_pdf(*, page_count: int, extracted_text: str) -> bool:
     txt = (extracted_text or "").strip()
     if len(txt) < 50:
         return True
-    # Heuristic: very low alpha ratio suggests bad extraction.
     alpha = sum(1 for c in txt if c.isalpha())
     ratio = alpha / max(1, len(txt))
     return ratio < 0.05
+
+
+def _draft_lines_to_json(lines: list[DraftPayrollLine]) -> list[dict]:
+    return [
+        {
+            "category": ln.category,
+            "description": ln.description,
+            "amount": ln.amount,
+            "ytd_amount": ln.ytd_amount,
+            "display_order": ln.display_order,
+        }
+        for ln in lines
+    ]
 
 
 def ingest_payroll_document(document_id: int) -> dict:
@@ -204,10 +503,7 @@ def ingest_payroll_document(document_id: int) -> dict:
     redacted_text = scrub.redacted_text
 
     pay_date, period_start, period_end, gross_pay, net_pay = _infer_basic_fields_from_text(redacted_text)
-
-    # Step 5B: no LLM extraction yet; keep lines empty, but preserve a minimal draft.
-    draft_lines: list[DraftPayrollLine] = []
-    lines_total_taxes_deductions = None
+    draft_lines, lines_total_taxes_deductions = _extract_payroll_lines_from_text(redacted_text)
 
     validation = validate_paystub(
         pay_date=pay_date,
@@ -219,7 +515,6 @@ def ingest_payroll_document(document_id: int) -> dict:
     )
 
     if not pay_date:
-        # Schema requires pay_date for draft insert; we keep this strict so the DB doesn't fill with junk.
         pdf_diag = None
         if suffix == ".pdf":
             pdf_diag = {
@@ -245,7 +540,6 @@ def ingest_payroll_document(document_id: int) -> dict:
         lines=draft_lines,
     )
 
-    # Store draft payroll rows (status=draft) and transition document to in_review (no approval flow yet).
     with db_connection() as conn:
         doc = fetch_document(conn, document_id)
         if doc is None:
@@ -307,7 +601,7 @@ def ingest_payroll_document(document_id: int) -> dict:
             "gross_pay": draft.gross_pay,
             "net_pay": draft.net_pay,
             "currency": draft.currency,
-            "lines": [],
+            "lines": _draft_lines_to_json(draft_lines),
         },
         "validation": {"ok": validation.ok, "warnings": validation.warnings},
     }

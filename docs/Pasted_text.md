@@ -1,10 +1,10 @@
-# Step 22 — Overview Household Readiness Strip
+# Step 23 — Payroll Extraction Quality Improvements
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 21 and is now best described as:
+Household Engine is complete through Step 22 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -16,13 +16,14 @@ Household Engine is complete through Step 21 and is now best described as:
 * plus Portfolio UI / modest household planning surface
 * plus Portfolio controls + recompute UX
 * plus persistent shell scroll behavior
+* plus Overview household readiness strip
 
 The app currently has:
 
 * local-first FastAPI + SQLite Hub
 * working Expenses ingest, analytics, and UI
 * working Payroll draft ingest, payroll APIs, and review queue backend/UI
-* shared cashflow analytics, trends, forecast, and portfolio summary endpoint
+* shared cashflow analytics, trends, forecast, portfolio, and readiness signals
 * Overview, Expenses, Review Queue, Payroll, and Portfolio UI pages
 * shared shell/theme foundation
 * responsive shared navigation
@@ -33,10 +34,10 @@ The app currently has:
 * persisted redacted payroll review artifacts
 * persisted payroll decision metadata
 * first-class Portfolio UI page
-* Portfolio controls for trailing months / liquidity reserve months
 * persistent topbar/nav with main-content scrolling
+* Overview readiness strip
 
-## Step 14A–21 status
+## Step 14A–22 status
 
 Completed enough.
 
@@ -53,6 +54,7 @@ Delivered:
 * Portfolio controls + recompute UX
 * Reset to defaults + current assumptions summary
 * persistent shell/topbar/nav with main content as the primary scroll region
+* Overview readiness strip with honest household data-readiness signals
 
 ## Product rule now locked in
 
@@ -62,115 +64,120 @@ That means:
 
 * household cashflow and planning remain the top-level view
 * payroll and documents still belong to specific household members
-* the UI should stay honest about data readiness, incomplete inputs, and limited outputs
-* the Overview page should increasingly behave like a true command center
+* approved payroll remains the only payroll that affects analytics/planning
+* extraction quality improvements must preserve ownership, review honesty, and approval semantics
 
-## Goal of Step 22
+## Goal of Step 23
 
-Add a modest “household readiness” strip to the Overview page so the app surfaces the current state of household financial readiness in one place.
+Improve payroll extraction quality on the current native-text path so payroll details become more complete, more useful, and more trustworthy before adding scanned-PDF OCR support.
 
-This should make it easier to answer questions like:
-
-* do we have approved payroll yet?
-* do we have enough expense history to trust recent summaries?
-* are there still items waiting in review?
-* is the household planning/portfolio layer operating on strong or limited inputs?
+This step should make draft payroll outputs better without changing the honest review-driven workflow.
 
 ## Product intent
 
-This step should improve clarity, not add complexity.
+Right now payroll extraction works, but quality is still thin in practical ways:
 
-The readiness strip should:
+* payroll lines are often sparse or empty
+* some important fields may be missing even when text exists
+* draft detail completeness varies too much
+* the system is usable, but not yet as strong as it could be on native-text PDFs
 
-* be quick to scan
-* feel calm and honest
-* summarize the current state of key data readiness signals
-* reinforce the command-center nature of the Overview page
+This step should improve extraction quality where the existing path already has enough text to do better.
 
 ## Required outcome
 
-Add an Overview readiness strip or equivalent top-level status area that communicates, in a modest way:
+Improve payroll extraction quality with focus on:
 
-1. whether approved payroll is present
-2. whether there is recent expense coverage / useful expense history
-3. whether items are currently in review
-4. whether planning/portfolio outputs are likely strong vs limited
-5. clear, honest states rather than fake confidence
+1. stronger field extraction where low-risk improvements are possible
+2. better payroll line capture where practical
+3. better normalization/cleanup of extracted payroll detail
+4. clearer handling of partially inferred vs missing data
+5. no regression to review queue honesty
+6. no regression to member ownership or approval/canonical semantics
 
 ## Scope guidance
 
-This is an Overview clarity step, not a new analytics engine.
+This is a quality-improvement step for the current extraction path, not an OCR step yet.
 
 That means:
 
-* build a modest readiness/status surface
-* reuse existing backend truth where possible
-* keep the UI lightweight and readable
-* do not invent fake scoring
-* do not redesign the whole Overview page
-* do not broaden into new portfolio logic
-* do not start payroll extraction work yet
+* improve extraction from native-text payroll documents
+* improve parsed detail quality where current heuristics are thin
+* improve line-item usefulness if practical
+* keep the system review-driven and honest
+* do not start scanned-PDF OCR support yet
+* do not redesign the whole payroll workflow
+* do not change approved-only analytics rules
 
 ## Suggested focus areas
 
-### Readiness signals
+### Field extraction quality
 
-Potential readiness indicators include:
+Look for high-value improvements to fields like:
 
-* Approved payroll present / missing
-* Expense history coverage available / thin
-* Pending review items count
-* Planning input quality limited / usable
+* pay date
+* period start/end
+* gross pay
+* net pay
+* regular pay / earnings
+* taxes / deductions
+* YTD values where available
 
-### Overview placement
+### Payroll lines
 
-The strip should likely live high on the Overview page so it becomes part of the user’s first scan of the app.
+Improve usefulness of `payroll_lines` where the current output is often sparse.
 
-### Honesty
+This can include:
 
-States should remain simple and truthful, for example:
+* better line detection
+* better normalization of line labels
+* better category assignment
+* better filtering of junk/duplicate rows
 
-* Ready
-* Limited
-* Missing
-* Pending review
+### Draft honesty
 
-Avoid fake numeric confidence or anything that implies more certainty than the system really has.
+The system should remain honest about what was confidently extracted vs still missing.
+
+It is better to be modest and correct than broad and misleading.
 
 ## Files likely involved
 
 Review first:
 
-* `src/templates/overview.html`
-* `static/js/overview.js`
-* `static/css/app.css`
-* `src/api/routes_overview.py`
+* `src/payroll/ingest.py`
+* `src/payroll/extractor_pdf.py`
+* `src/payroll/normalizer.py`
+* `src/payroll/validator.py`
+* `src/payroll/repository.py`
 
-Potentially inspect whether existing overview/portfolio/review summary data already provides enough signals before adding new endpoints.
+Potentially inspect:
+
+* review payload composition
+* current payroll detail rendering in:
+  * `static/js/review_queue.js`
+  * `static/js/payroll.js`
 
 ## Deliverables for this step
 
-1. Overview readiness strip or equivalent status area
-2. honest household readiness signals
-3. no regression to current Overview page usability
-4. no regression to shell scroll behavior
-5. no regression to payroll/portfolio semantics
+1. improved native-text payroll extraction quality
+2. improved payroll line usefulness where practical
+3. clearer/more complete draft payroll detail
+4. no regression to approval/canonical workflow
+5. no regression to review artifact persistence
+6. no regression to member-aware payroll model
 
 ## Constraints
 
 * keep changes incremental
 * no framework migration
 * no Tailwind rewrite
-* no fake scoring system
+* no scanned-PDF OCR work yet
 * no unrelated global redesign
-* keep the system local-first and honest about readiness/limitations
+* keep the system local-first and honest about data quality/state
 
-## What comes next after Step 22
+## What comes next after Step 23
 
-After Step 22, the next roadmap order becomes:
+After Step 23, the next roadmap order becomes:
 
-* Step 23 — Payroll extraction quality improvements
 * Step 24 — Scanned-PDF OCR support
 * Step 25 — Reopen / undo workflow for payroll decisions
-
-Additional later work can still include richer review artifact expansion if it continues to look worthwhile.
