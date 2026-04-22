@@ -16,6 +16,34 @@ async function fetchJson(path) {
   return await res.json();
 }
 
+function setParam(key, value) {
+  const url = new URL(window.location.href);
+  if (value === null || value === undefined || value === "") {
+    url.searchParams.delete(key);
+  } else {
+    url.searchParams.set(key, String(value));
+  }
+  window.history.replaceState({}, "", url.toString());
+}
+
+function getParamStr(key) {
+  const url = new URL(window.location.href);
+  const v = url.searchParams.get(key);
+  return v == null ? null : String(v);
+}
+
+function clampInt(n, min, max) {
+  const x = Math.trunc(Number(n));
+  if (!Number.isFinite(x)) return null;
+  return Math.max(min, Math.min(max, x));
+}
+
+function clampFloat(n, min, max) {
+  const x = Number(n);
+  if (!Number.isFinite(x)) return null;
+  return Math.max(min, Math.min(max, x));
+}
+
 function money(v) {
   const n = Number(v || 0);
   if (!Number.isFinite(n)) return "—";
@@ -166,13 +194,58 @@ function renderCashflow(summary) {
     .join("");
 }
 
-async function load() {
+let _loading = false;
+
+function getControls() {
+  return {
+    trailingInput: document.getElementById("portfolio-trailing-months"),
+    reserveInput: document.getElementById("portfolio-liquidity-reserve-months"),
+    applyBtn: document.getElementById("portfolio-apply"),
+  };
+}
+
+function getRequestedParamsFromUrlOrDefaults() {
+  const trailingRaw = getParamStr("trailing_months");
+  const reserveRaw = getParamStr("liquidity_reserve_months");
+  const trailing = clampInt(trailingRaw ?? 3, 1, 12) ?? 3;
+  const reserve = clampFloat(reserveRaw ?? 1.0, 0.0, 6.0);
+  return {
+    trailing_months: trailing,
+    liquidity_reserve_months: reserve == null ? 1.0 : Math.round(reserve * 10) / 10,
+  };
+}
+
+function setControlsFromParams(params) {
+  const { trailingInput, reserveInput } = getControls();
+  if (trailingInput) trailingInput.value = String(params.trailing_months);
+  if (reserveInput) reserveInput.value = String(params.liquidity_reserve_months);
+}
+
+function readParamsFromControls() {
+  const { trailingInput, reserveInput } = getControls();
+  const trailing = clampInt(trailingInput?.value ?? "", 1, 12);
+  const reserve = clampFloat(reserveInput?.value ?? "", 0.0, 6.0);
+  if (trailing == null) throw new Error("Trailing months must be a number between 1 and 12.");
+  if (reserve == null) throw new Error("Liquidity reserve months must be a number between 0 and 6.");
+  return {
+    trailing_months: trailing,
+    liquidity_reserve_months: Math.round(reserve * 10) / 10,
+  };
+}
+
+async function load(params) {
+  if (_loading) return;
+  _loading = true;
   const cards = document.getElementById("portfolio-cards");
   if (cards) cards.innerHTML = skeletonCards();
   setBanner(null);
 
   try {
-    const summary = await fetchJson("/api/overview/portfolio");
+    const qs = new URLSearchParams();
+    if (params?.trailing_months != null) qs.set("trailing_months", String(params.trailing_months));
+    if (params?.liquidity_reserve_months != null)
+      qs.set("liquidity_reserve_months", String(params.liquidity_reserve_months));
+    const summary = await fetchJson(`/api/overview/portfolio?${qs.toString()}`);
     renderCards(summary);
     renderExplain(summary);
     renderInputs(summary);
@@ -186,11 +259,47 @@ async function load() {
     setBanner("error", "Portfolio unavailable", e.message || String(e));
     const el = document.getElementById("portfolio-cards");
     if (el) el.innerHTML = "";
+  } finally {
+    _loading = false;
   }
 }
 
-load().catch((err) => {
-  console.error(err);
-  setBanner("error", "Portfolio unavailable", err.message || String(err));
-});
+function bindControlsOnce() {
+  const { trailingInput, reserveInput, applyBtn } = getControls();
+  if (applyBtn && !applyBtn.dataset.bound) {
+    applyBtn.dataset.bound = "1";
+    applyBtn.addEventListener("click", async () => {
+      try {
+        const p = readParamsFromControls();
+        setParam("trailing_months", p.trailing_months);
+        setParam("liquidity_reserve_months", p.liquidity_reserve_months);
+        await load(p);
+      } catch (e) {
+        setBanner("error", "Invalid controls", e.message || String(e));
+      }
+    });
+  }
+
+  // Enter in either input applies.
+  [trailingInput, reserveInput].forEach((inp) => {
+    if (inp && !inp.dataset.bound) {
+      inp.dataset.bound = "1";
+      inp.addEventListener("keydown", async (e) => {
+        if (e.key !== "Enter") return;
+        e.preventDefault();
+        applyBtn?.click();
+      });
+    }
+  });
+}
+
+(() => {
+  const initial = getRequestedParamsFromUrlOrDefaults();
+  setControlsFromParams(initial);
+  bindControlsOnce();
+  load(initial).catch((err) => {
+    console.error(err);
+    setBanner("error", "Portfolio unavailable", err.message || String(err));
+  });
+})();
 

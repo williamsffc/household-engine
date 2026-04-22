@@ -7,6 +7,35 @@
 
 <div id="portfolio-status"></div>
 
+<section class="grid grid--one">
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Controls</div>
+      <div class="panel__meta">Adjust estimate inputs, then recompute</div>
+    </div>
+    <div class="kv">
+      <div class="kv__item">
+        <div class="kv__label">Trailing months</div>
+        <div class="kv__value">
+          <input id="portfolio-trailing-months" class="upload__input" inputmode="numeric" placeholder="3" />
+        </div>
+      </div>
+      <div class="kv__item">
+        <div class="kv__label">Liquidity reserve months</div>
+        <div class="kv__value">
+          <input id="portfolio-liquidity-reserve-months" class="upload__input" inputmode="decimal" placeholder="1.0" />
+        </div>
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; align-items:center;">
+      <button id="portfolio-apply" class="icon-button icon-button--primary" type="button">Apply / Recompute</button>
+      <span style="color:var(--color-text-muted); font-size:12px;">
+        These controls change the estimate inputs. They don’t change your underlying approved payroll or expenses data.
+      </span>
+    </div>
+  </div>
+</section>
+
 <section class="grid grid--cards" id="portfolio-cards"></section>
 
 <section class="grid grid--two">

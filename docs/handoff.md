@@ -31,10 +31,11 @@ Completed:
 * Step 16
 * Step 17
 * Step 18
+* Step 19
 
 Current active step:
 
-* Step 19 — Portfolio UI and richer household planning
+* Step 20 — Portfolio controls + recompute UX
 
 ## Current status
 
@@ -47,6 +48,7 @@ Household Engine is now:
 * plus dedicated Payroll page / paystub examination UI
 * plus improved household-member selection UX
 * plus improved payroll review artifact durability and traceability
+* plus Portfolio UI / modest household planning surface
 
 ## What is working now
 
@@ -113,6 +115,18 @@ Household Engine is now:
 * payroll status presentation is clearer across approved / rejected / in_review
 * Payroll detail shows rejection reason when present
 
+### Portfolio / planning
+
+* dedicated Portfolio page exists
+* Portfolio route is wired into UI routing
+* Portfolio appears in shared navigation
+* Portfolio UI consumes the existing `/api/overview/portfolio` endpoint
+* Portfolio shows deployable surplus / planning summary
+* Portfolio shows supporting assumptions and recent cashflow context
+* Portfolio shows honest limited/unavailable warning states when approved payroll is missing or insufficient
+* Portfolio remains a modest, household-first planning surface
+* approved-only payroll semantics remain unchanged
+
 ### Shared analytics / overview
 
 * cashflow analytics views
@@ -160,6 +174,7 @@ Household Engine is now:
 * `GET /expenses`
 * `GET /review-queue`
 * `GET /payroll`
+* `GET /portfolio`
 
 ### Overview API
 
@@ -207,16 +222,18 @@ This means:
   * per-member views
   * household combined rollups
 * household payroll totals are computed from approved per-member payroll
+* household planning remains grounded in approved household cashflow
 
 This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
-### Portfolio / planning UI
+### Portfolio / planning refinement
 
-* no dedicated Portfolio UI yet
-* deployable-surplus logic exists in backend but is not yet surfaced as a first-class page
-* household planning presentation is still thin
+* Portfolio page still uses backend defaults only
+* no UI controls yet for `trailing_months`
+* no UI controls yet for `liquidity_reserve_months`
+* no recompute/apply UX yet for planning assumptions
 
 ### Payroll quality / later enhancements
 
@@ -239,10 +256,10 @@ This is the intended model for Person-M and Person-W going forward.
 
 Proceed with:
 
-* Step 19 — Portfolio UI and richer household planning
+* Step 20 — Portfolio controls + recompute UX
 
 ## Important current truth
 
-The payroll and household cashflow foundations are now strong enough to support a real Portfolio/planning UI.
+The Portfolio page now exists and is honest/useful, but it still uses fixed backend defaults.
 
-The next best move is to expose the existing portfolio/deployable-surplus logic in a modest, honest household-first planning surface.
+The next best move is to add small, safe controls for planning assumptions so the household can recompute the estimate without changing the underlying modest planning model.
