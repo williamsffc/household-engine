@@ -60,6 +60,10 @@
               <span class="sidebar__icon" aria-hidden="true">✓</span>
               <span class="sidebar__label">Review Queue</span>
             </a>
+            <a class="sidebar__link {% if request and request.url.path.startswith('/payroll') %}sidebar__link--active{% endif %}" href="/payroll">
+              <span class="sidebar__icon" aria-hidden="true">$</span>
+              <span class="sidebar__label">Payroll</span>
+            </a>
           </nav>
         </aside>
         <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>

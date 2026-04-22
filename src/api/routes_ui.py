@@ -29,3 +29,8 @@ def expenses_page(request: Request):
 def review_queue_page(request: Request):
     return templates.TemplateResponse(request, "review_queue.html", {"request": request})
 
+
+@router.get("/payroll")
+def payroll_page(request: Request):
+    return templates.TemplateResponse(request, "payroll.html", {"request": request})
+

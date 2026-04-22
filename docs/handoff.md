@@ -27,10 +27,11 @@ Completed:
 * Step 14C
 * Step 14D
 * Step 14E
+* Step 15
 
 Current active step:
 
-* Step 15 — Payroll Approval / Canonical Workflow
+* Step 16 — Dedicated Payroll page / paystub examination UI
 
 ## Current status
 
@@ -39,6 +40,7 @@ Household Engine is now:
 * V1-complete
 * plus selective V2-ready hardening
 * plus UI foundation refresh completed enough to support next workflow work
+* plus canonical payroll approval workflow
 
 ## What is working now
 
@@ -76,6 +78,11 @@ Household Engine is now:
 * clearer upload hierarchy and `in_review` explanation
 * more scannable selected-item detail layout
 * calmer loading states and partial-failure behavior
+* approve/reject review actions now exist
+* canonical payroll status transitions now exist
+* ownership mismatch protection exists for review decisions
+* approved payroll becomes analytics-eligible
+* rejected payroll stays out of analytics
 
 ### Shared analytics / overview
 
@@ -83,6 +90,8 @@ Household Engine is now:
 * overview dashboard UI
 * trend / forecast endpoints
 * portfolio / deployable-surplus endpoint
+* payroll analytics remain approved-only
+* household totals remain the rollup of approved per-member payroll
 
 ### Shared shell / UI foundation
 
@@ -152,6 +161,8 @@ Household Engine is now:
 
 * `GET /api/review-queue`
 * `GET /api/review-queue/{document_id}`
+* `POST /api/review-queue/{document_id}/approve`
+* `POST /api/review-queue/{document_id}/reject`
 
 ## Product rule now locked in
 
@@ -159,35 +170,34 @@ The app is **household-first**, but every payroll record belongs to exactly **on
 
 This means:
 
-* payroll should be tracked per member
-* approved payroll analytics should support both:
+* payroll is tracked per member
+* approved payroll analytics support both:
   * per-member views
   * household combined rollups
-* household payroll totals should be computed from approved per-member payroll
+* household payroll totals are computed from approved per-member payroll
 
 This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
-### Payroll / canonicalization
+### Payroll page / exploration UX
 
-* no approve/reject payroll workflow yet
-* no canonical payroll approval flow yet
 * no dedicated Payroll page / paystub examination UI yet
-* no robust scanned-PDF OCR yet
-* no strong payroll line-item extraction yet
+* household-vs-person payroll exploration is not yet surfaced in a dedicated page
+* payroll browsing across statuses is not yet first-class in UI
+* member selection UX is still basic/manual during payroll upload
 
 ### Review queue / artifact persistence
 
-* no approve endpoint yet
-* no reject endpoint yet
+* no reopen/undo workflow yet for approve/reject
 * no persisted redacted review artifact yet
+* rejection reason is stored in audit log only
 
-### Payroll member UX
+### Payroll quality / later enhancements
 
-* Review Queue payroll upload still needs a better member-selection UX
-* dedicated member-level payroll browsing/filtering UI does not exist yet
-* household vs per-member payroll views are not yet surfaced in UI
+* no robust scanned-PDF OCR yet
+* no strong payroll line-item extraction yet
+* no dedicated member-selection picker UX yet
 
 ### Portfolio / later V2
 
@@ -207,17 +217,16 @@ This is the intended model for Person-M and Person-W going forward.
 
 Proceed with:
 
-* Step 15 — Payroll Approval / Canonical Workflow
+* Step 16 — Dedicated Payroll page / paystub examination UI
 
 Then:
 
-* Step 16 — Dedicated Payroll page / paystub examination UI
 * Step 17 — Better household-member selection UX
 * Step 18 — Review artifact + payroll quality improvements
 * Step 19 — Portfolio UI and richer household planning
 
 ## Important current truth
 
-The biggest remaining functional product gap is still payroll approve/reject + canonical approval flow.
+The biggest remaining functional payroll gap is no longer approval/canonicalization — that now exists.
 
-The UI foundation work is now complete enough that the next best move is to formalize payroll approval, rejection, canonicalization, and member ownership rules before building the dedicated Payroll page.
+The next best move is to build a dedicated Payroll page that exposes payroll history and examination cleanly, while staying aligned with the locked-in household-first, member-aware model.

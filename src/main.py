@@ -7,6 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from src.api.routes_documents import router as documents_router
 from src.api.routes_expenses import router as expenses_router
+from src.api.routes_household import router as household_router
 from src.api.routes_health import router as health_router
 from src.api.routes_overview import router as overview_router
 from src.api.routes_payroll import router as payroll_router
@@ -46,6 +47,7 @@ def on_startup() -> None:
 app.include_router(health_router)
 app.include_router(documents_router)
 app.include_router(expenses_router)
+app.include_router(household_router)
 app.include_router(overview_router)
 app.include_router(payroll_router)
 app.include_router(review_router)

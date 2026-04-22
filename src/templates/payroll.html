@@ -1,4 +1,67 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Payroll</h1>
+<header class="page-header">
+  <h1 class="page-title">Payroll</h1>
+  <div class="page-subtitle">Browse and examine paystubs across members and statuses</div>
+</header>
+
+<div id="payroll-status"></div>
+
+<section class="grid grid--one">
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">View</div>
+      <div class="panel__meta">Household rollup vs per-person browsing</div>
+    </div>
+    <div class="row" style="grid-template-columns: 1fr;">
+      <div class="row__left">
+        <div class="row__title">Member</div>
+        <div class="row__subtitle">
+          <select id="payroll-member" class="upload__input" style="min-width: 240px;"></select>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="grid-template-columns: 1fr;">
+      <div class="row__left">
+        <div class="row__title">Status</div>
+        <div class="row__subtitle">
+          <select id="payroll-status-filter" class="upload__input" style="min-width: 240px;">
+            <option value="">All</option>
+            <option value="approved">Approved (canonical)</option>
+            <option value="draft">Draft / in_review</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="callout callout--info">
+      <div class="callout__title">Draft vs approved</div>
+      <div class="callout__body">
+        Approved payroll is canonical and eligible for analytics. Draft payroll appears here for examination, but is typically handled in <a href="/review-queue">Review Queue</a>.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="grid grid--two">
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Paystubs</div>
+      <div class="panel__meta" id="payroll-meta"></div>
+    </div>
+    <div class="table" id="payroll-list"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel__header">
+      <div class="panel__title">Paystub detail</div>
+      <div class="panel__meta" id="payroll-detail-meta"></div>
+    </div>
+    <div id="payroll-detail" class="table"></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/payroll.js"></script>
 {% endblock %}

@@ -110,22 +110,33 @@ def list_paystubs(
     params: list[Any] = []
 
     if member_id is not None:
-        where.append("member_id = ?")
+        where.append("p.member_id = ?")
         params.append(int(member_id))
     if start_date is not None:
-        where.append("pay_date >= ?")
+        where.append("p.pay_date >= ?")
         params.append(start_date)
     if end_date is not None:
-        where.append("pay_date <= ?")
+        where.append("p.pay_date <= ?")
         params.append(end_date)
     if status is not None:
-        where.append("status = ?")
+        where.append("p.status = ?")
         params.append(status)
 
-    sql = "SELECT * FROM payroll_paystubs"
+    sql = """
+        SELECT
+            p.*,
+            d.status AS document_status,
+            d.original_filename AS document_original_filename,
+            d.uploaded_at AS document_uploaded_at,
+            hm.display_name AS member_display_name,
+            hm.role AS member_role
+        FROM payroll_paystubs p
+        JOIN documents d ON d.id = p.document_id
+        LEFT JOIN household_members hm ON hm.id = p.member_id
+    """
     if where:
         sql += " WHERE " + " AND ".join(where)
-    sql += " ORDER BY pay_date DESC, id DESC LIMIT ?;"
+    sql += " ORDER BY p.pay_date DESC, p.id DESC LIMIT ?;"
     params.append(int(limit))
 
     rows = conn.execute(sql, tuple(params)).fetchall()
@@ -133,7 +144,22 @@ def list_paystubs(
 
 
 def get_paystub_by_id(conn: sqlite3.Connection, paystub_id: int) -> dict[str, Any] | None:
-    row = conn.execute("SELECT * FROM payroll_paystubs WHERE id = ?;", (int(paystub_id),)).fetchone()
+    row = conn.execute(
+        """
+        SELECT
+            p.*,
+            d.status AS document_status,
+            d.original_filename AS document_original_filename,
+            d.uploaded_at AS document_uploaded_at,
+            hm.display_name AS member_display_name,
+            hm.role AS member_role
+        FROM payroll_paystubs p
+        JOIN documents d ON d.id = p.document_id
+        LEFT JOIN household_members hm ON hm.id = p.member_id
+        WHERE p.id = ?;
+        """,
+        (int(paystub_id),),
+    ).fetchone()
     if row is None:
         return None
     return _row_to_dict(row)
