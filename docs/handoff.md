@@ -47,10 +47,11 @@ Completed:
 * Step 32
 * Step 33
 * Step 34
+* Step 35
 
 Current active step:
 
-* Step 35 — Review Workflow and Reliability Polish
+* Step 36 — Cross-Page Empty/Partial-Failure Consistency Pass
 
 ## Current status
 
@@ -78,6 +79,7 @@ Household Engine is now:
 * plus real-usage polish improvements
 * plus backend workflow safety hardening
 * plus conflict-aware UI refresh for review actions
+* plus review workflow and reliability polish
 
 ## What is working now
 
@@ -138,12 +140,10 @@ Household Engine is now:
 * compact decision metadata summary now appears in Review Queue and Payroll detail
 * audit rows now use human-readable labels and cleaner summarized details
 * decision metadata row now also shows decided_at / decision_actor when present
-* backend approve/reject/reopen actions are hardened:
-  * conditional updates only
-  * SQLite transaction protection
-  * stale/no-op requests return 409 Conflict
-  * duplicate/no-op audit writes are avoided
-* frontend now handles 409 conflicts calmly for review actions and refreshes toward backend truth
+* backend approve/reject/reopen actions are hardened
+* frontend now handles 409 conflicts calmly for review actions
+* post-action flash banners now survive refresh for key review actions
+* review artifacts are now checked for missing/stale/empty cases at read time and can regenerate once with honest non-fatal warnings if regeneration fails
 
 ### Payroll page
 
@@ -282,14 +282,10 @@ This means:
 
 ## What is not implemented yet
 
-### Combined polish/hardening pass
+### Cross-page consistency polish
 
-* there is still room for a modest combined polish pass across:
-  * review action aftermath behavior
-  * traceability readability
-  * artifact robustness/freshness edge cases
-  * empty/partial-failure state consistency
-  * small command-center consistency improvements
+* empty, limited, unavailable, and partial-failure states are still somewhat page-specific in wording and tone
+* there is still room to align these patterns across Review Queue, Payroll, Overview, Portfolio, and Expenses
 
 ### Deferred advanced items
 
@@ -303,10 +299,10 @@ This means:
 
 Proceed with:
 
-* Step 35 — Review Workflow and Reliability Polish
+* Step 36 — Cross-Page Empty/Partial-Failure Consistency Pass
 
 ## Important current truth
 
-The app is now both feature-complete and fairly robust.
+The app is now robust and calm in most workflow-heavy paths.
 
-The next best move is one combined polish/hardening pass that improves trust, readability, consistency, and state-handling without opening another major subsystem.
+The next best move is a consistency pass so empty/limited/failure states across the major pages feel like one coherent product instead of page-by-page variations.

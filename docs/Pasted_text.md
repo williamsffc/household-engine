@@ -1,10 +1,10 @@
-# Step 35 — Review Workflow and Reliability Polish
+# Step 36 — Cross-Page Empty/Partial-Failure Consistency Pass
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 34 and is now best described as:
+Household Engine is complete through Step 35 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -28,6 +28,7 @@ Household Engine is complete through Step 34 and is now best described as:
 * plus real-usage polish improvements
 * plus backend workflow safety hardening
 * plus conflict-aware UI refresh for review actions
+* plus review workflow and reliability polish
 
 The app currently has:
 
@@ -56,8 +57,9 @@ The app currently has:
 * keyboard accessibility and action-state polish
 * backend-side protection against duplicate/stale review actions
 * frontend-side calm handling for backend conflict responses
+* review action flash messaging and artifact freshness protection
 
-## Step 14A–34 status
+## Step 14A–35 status
 
 Completed enough.
 
@@ -86,6 +88,7 @@ Delivered:
 * keyboard accessibility and UI-side duplicate-action prevention
 * backend-side conditional-update hardening for approve/reject/reopen
 * conflict-aware UI refresh behavior for stale/no-op review actions
+* post-action flash success/warning messaging and review artifact freshness/read-time regeneration safeguards
 
 ## Product rule now locked in
 
@@ -96,97 +99,62 @@ That means:
 * household cashflow and planning remain the top-level view
 * payroll and documents still belong to specific household members
 * approved payroll remains the only payroll that affects analytics/planning
-* review workflows should feel calm, safe, and trustworthy
-* polish work should reduce friction without opening large new systems
+* empty, limited, and failed states should feel calm and consistent across the app
+* polish should keep improving coherence rather than adding new heavy systems
 
-## Goal of Step 35
+## Goal of Step 36
 
-Do one combined polish/hardening pass across review workflow behavior, reliability, traceability readability, artifact freshness edge cases, and consistency of empty/partial-failure states.
+Do a focused consistency pass on empty states, partial-failure states, and limited-data messaging across the key pages so the app feels more coherent and less surprising.
 
 ## Product intent
 
-This step combines a set of closely related improvements into one stabilization pass:
+The major workflows now exist and are fairly robust.
 
-1. review action UX tightening
-2. small backend/workflow reliability refinement
-3. audit/traceability readability cleanup
-4. review artifact robustness/freshness edge-case handling
-5. consistency polish for empty and partial-failure states
-
-The goal is to make the current app feel more trustworthy, less surprising, and more coherent in real use.
+The next polish opportunity is consistency:
+* similar situations should look and feel similar
+* “empty,” “limited,” “unavailable,” and “failed” should use clearer, more aligned language
+* banners and empty-state panels should feel like part of one system
 
 ## Required outcome
 
-### Review action UX tightening
-
-1. improve approve/reject/reopen aftermath behavior
-2. make selection/refresh behavior feel intentional
-3. reduce “where did it go?” confusion after actions
-
-### Reliability refinement
-
-4. improve handling of duplicate/stale/no-op requests where practical
-5. keep backend truth primary
-6. avoid noisy audit writes or misleading state transitions
-
-### Audit / traceability readability
-
-7. improve readability of surfaced audit/history details
-8. improve reason formatting where useful
-9. keep traceability modest, not overwhelming
-
-### Review artifact robustness
-
-10. handle stale/missing/empty artifact situations more clearly
-11. make regeneration/fallback behavior more understandable
-12. avoid confusing blank or ambiguous artifact states
-
-### Consistency polish
-
-13. align empty-state and partial-failure patterns across key pages
-14. improve small wording/readability consistency where useful
-15. preserve the calm command-center feel
+1. review current empty/partial-failure/limited states across key pages
+2. align wording and presentation where practical
+3. improve consistency without redesigning the pages
+4. preserve current workflow semantics
+5. preserve current analytics semantics
+6. keep changes modest and low-risk
 
 ## Scope guidance
 
-This is a combined refinement step, not a new feature track.
+This is a cross-page polish step, not a new feature track.
 
 That means:
 
-* fix a modest set of high-value friction points
-* prefer shared fixes over scattered hacks
-* keep the scope practical
-* do not build a full versioning/audit console
-* do not redesign the app
-* do not open unrelated systems
+* tighten wording and state presentation
+* reuse existing banner/callout/empty-state patterns
+* prefer shared fixes over page-specific hacks
+* do not redesign layouts
+* do not add major new backend work
 
 ## Suggested focus areas
 
-### Review Queue / Payroll detail
+### Review Queue / Payroll
 
-* post-action refresh behavior
-* selection stability
-* calm stale/conflict messaging
-* reason/history readability
+* empty list states
+* no-selection states
+* artifact-limited or regeneration-warning states
+* stale/conflict aftermath wording
 
-### Review artifacts
+### Overview / Portfolio
 
-* clearer handling when artifact metadata exists but content is limited
-* clearer handling when regeneration is needed or content is unavailable
-* modest truthfulness improvements, not a full artifact browser
+* limited-data wording
+* unavailable/empty wording
+* warning banner tone consistency
 
-### Empty / partial-failure consistency
+### Expenses
 
-Across:
-* Review Queue
-* Payroll
-* Overview
-* Portfolio
-
-Aim for:
-* clearer empty states
-* more aligned “limited / unavailable / failed” wording
-* consistent user expectations
+* empty activity/table states
+* partial-failure banner consistency
 
 ## Files likely involved
 
@@ -196,40 +164,32 @@ Review first:
 * `static/js/payroll.js`
 * `static/js/overview.js`
 * `static/js/portfolio.js`
+* `static/js/expenses.js`
 * `static/css/app.css`
 
 Potentially inspect:
-* `src/api/routes_review.py`
-* `src/api/routes_payroll.py`
-* `src/services/review_queue.py`
-* `src/payroll/review_artifacts.py`
-* relevant templates:
-  * `src/templates/review_queue.html`
-  * `src/templates/payroll.html`
-  * `src/templates/overview.html`
-  * `src/templates/portfolio.html`
+* relevant templates for page-specific empty-state markup
 
 ## Deliverables for this step
 
-1. a modest set of high-value review workflow polish improvements
-2. a modest set of reliability/state-handling improvements
-3. a modest set of traceability readability improvements
-4. a modest set of artifact robustness/empty-state improvements
-5. better consistency across current pages
-6. no regression to workflow semantics
-7. no regression to analytics semantics
-8. no regression to member-aware payroll model
+1. more consistent empty-state wording/presentation across key pages
+2. more consistent partial-failure and limited-state wording/presentation
+3. no regression to workflow semantics
+4. no regression to analytics semantics
+5. no broad redesign
 
 ## Constraints
 
 * keep changes incremental
 * no framework migration
 * no Tailwind rewrite
-* no full version-history system
-* no fake confidence scoring
 * no unrelated global redesign
 * keep the system local-first and honest about state and data quality
 
-## What comes next after Step 35
+## What comes next after Step 36
 
-After Step 35, reassess based on actual use and remaining friction rather than committing to another large preset roadmap.
+After Step 36, reassess based on actual use again, likely choosing between:
+
+* more extraction refinement
+* more command-center polish
+* small workflow readability improvements

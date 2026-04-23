@@ -7,7 +7,10 @@ async function fetchJson(path) {
   const res = await fetch(path, { headers: { Accept: "application/json" } });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`${path} failed: ${res.status} ${text}`);
+    const err = new Error(text || `${path} failed`);
+    err.status = res.status;
+    err.path = path;
+    throw err;
   }
   return await res.json();
 }
@@ -74,18 +77,23 @@ async function load() {
   const emptyEl = document.getElementById("exp-monthly-empty");
   const canvas = document.getElementById("exp-monthly-chart");
 
-  function setBannerError(message) {
+  function setBanner(kind, title, message) {
     if (!statusEl) return;
+    if (!kind) {
+      statusEl.innerHTML = "";
+      return;
+    }
+    const bannerClass = kind === "error" ? "banner--error" : kind === "success" ? "banner--success" : "banner--warning";
     statusEl.innerHTML = `
-      <div class="banner banner--error">
-        <div class="banner__title">Expenses data unavailable</div>
+      <div class="banner ${bannerClass}">
+        <div class="banner__title">${escapeHtml(title || "Expenses")}</div>
         <div class="banner__body">${escapeHtml(message || "Unknown error")}</div>
       </div>
     `;
   }
 
   function clearBanner() {
-    if (statusEl) statusEl.innerHTML = "";
+    setBanner(null);
   }
 
   // Loading placeholders (keeps page calm).
@@ -106,11 +114,19 @@ async function load() {
 
   clearBanner();
 
+  let partialFailures = 0;
+  const warnPartial = () => {
+    partialFailures += 1;
+    if (partialFailures === 1) {
+      setBanner("warning", "Some expenses data is unavailable", "Some widgets could not load. Showing what’s available.");
+    }
+  };
+
   let monthly = [];
   try {
     monthly = await fetchJson("/api/expenses/monthly");
   } catch (e) {
-    setBannerError(e.message || String(e));
+    setBanner("error", "Expenses unavailable", e.message || String(e));
     monthly = [];
   }
 
@@ -123,7 +139,7 @@ async function load() {
   try {
     categories = await fetchJson("/api/expenses/categories?limit=12");
   } catch (e) {
-    setBannerError(e.message || String(e));
+    warnPartial();
     categories = [];
   }
   const top = categories && categories.length ? categories[0] : null;
@@ -153,7 +169,7 @@ async function load() {
   try {
     recent = await fetchJson("/api/expenses/recent?limit=25");
   } catch (e) {
-    setBannerError(e.message || String(e));
+    warnPartial();
     recent = [];
   }
   recentCountEl.textContent = String((recent || []).length);

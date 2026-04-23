@@ -74,7 +74,7 @@ function setBanner(kind, title, body) {
     el.innerHTML = "";
     return;
   }
-  const bannerClass = kind === "error" ? "banner--error" : "banner--warning";
+  const bannerClass = kind === "error" ? "banner--error" : kind === "success" ? "banner--success" : "banner--warning";
   el.innerHTML = `
     <div class="banner ${bannerClass}">
       <div class="banner__title">${escapeHtml(title)}</div>

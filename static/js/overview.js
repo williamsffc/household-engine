@@ -7,7 +7,10 @@ async function fetchJson(path) {
   const res = await fetch(path, { headers: { Accept: "application/json" } });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`${path} failed: ${res.status} ${text}`);
+    const err = new Error(text || `${path} failed`);
+    err.status = res.status;
+    err.path = path;
+    throw err;
   }
   return await res.json();
 }
@@ -32,6 +35,26 @@ function escapeHtml(s) {
 function cssVar(name, fallback) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || fallback;
+}
+
+function setBanner(kind, title, message) {
+  const el = document.getElementById("overview-status");
+  if (!el) return;
+  if (!kind) {
+    el.innerHTML = "";
+    return;
+  }
+  const bannerClass = kind === "error" ? "banner--error" : kind === "success" ? "banner--success" : "banner--warning";
+  el.innerHTML = `
+    <div class="banner ${bannerClass}">
+      <div class="banner__title">${escapeHtml(title || "Overview")}</div>
+      <div class="banner__body">${escapeHtml(message || "Unknown error")}</div>
+    </div>
+  `;
+}
+
+function clearBanner() {
+  setBanner(null);
 }
 
 function readinessPillClass(sectionKey, status) {
@@ -111,13 +134,29 @@ async function load() {
   const recentDocsEl = document.getElementById("recent-docs");
   const pendingReviewEl = document.getElementById("pending-review");
 
-  const [summary, readinessRes] = await Promise.all([
-    fetchJson("/api/overview/summary"),
-    fetchJson("/api/overview/readiness").catch((e) => {
-      console.warn(e);
-      return null;
-    }),
-  ]);
+  clearBanner();
+
+  let partialFailures = 0;
+  const warnPartial = () => {
+    partialFailures += 1;
+    if (partialFailures === 1) {
+      setBanner("warning", "Some overview data is unavailable", "Some widgets could not load. Showing what’s available.");
+    }
+  };
+
+  let summary = null;
+  try {
+    summary = await fetchJson("/api/overview/summary");
+  } catch (e) {
+    setBanner("error", "Overview unavailable", e.message || String(e));
+    throw e;
+  }
+
+  const readinessRes = await fetchJson("/api/overview/readiness").catch((e) => {
+    console.warn(e);
+    warnPartial();
+    return null;
+  });
   renderReadiness(readinessRes);
 
   // Summary card uses view-backed overview summary (income is approved-only).
@@ -135,7 +174,11 @@ async function load() {
   }
 
   // Recent documents widget.
-  const recent = await fetchJson("/api/overview/recent-documents?limit=10");
+  const recent = await fetchJson("/api/overview/recent-documents?limit=10").catch((e) => {
+    console.warn(e);
+    warnPartial();
+    return [];
+  });
   renderRows(
     recentDocsEl,
     recent.map((d) => {
@@ -155,11 +198,15 @@ async function load() {
   );
 
   // Pending review widget.
-  const pending = await fetchJson("/api/review-queue");
-  pendingEl.textContent = String(pending.length || 0);
+  const pending = await fetchJson("/api/review-queue").catch((e) => {
+    console.warn(e);
+    warnPartial();
+    return null;
+  });
+  if (pending) pendingEl.textContent = String(pending.length || 0);
   renderRows(
     pendingReviewEl,
-    pending.map((d) => {
+    (pending || []).map((d) => {
       const title = escapeHtml(d.original_filename || `Document ${d.document_id}`);
       const subtitle = `${escapeHtml(d.module_owner)} · uploaded ${escapeHtml(d.uploaded_at)}`;
       return `
@@ -172,16 +219,27 @@ async function load() {
         </div>
       `;
     }),
-    "No pending review items."
+    pending ? "No pending review items." : "Pending review list unavailable."
   );
 
   // Cashflow chart (view-backed).
-  const cashflow = await fetchJson("/api/overview/cashflow");
+  const cashflow = await fetchJson("/api/overview/cashflow").catch((e) => {
+    console.warn(e);
+    warnPartial();
+    return null;
+  });
   const metaEl = document.getElementById("cashflow-meta");
   const emptyEl = document.getElementById("cashflow-empty");
   const canvas = document.getElementById("cashflow-chart");
 
-  if (!cashflow || cashflow.length === 0) {
+  if (!cashflow) {
+    emptyEl.style.display = "block";
+    emptyEl.textContent = "Cashflow trend unavailable.";
+    canvas.style.display = "none";
+    return;
+  }
+
+  if (cashflow.length === 0) {
     emptyEl.style.display = "block";
     canvas.style.display = "none";
     return;
