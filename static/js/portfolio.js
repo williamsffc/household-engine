@@ -264,6 +264,13 @@ async function load(params) {
   if (cards) cards.innerHTML = skeletonCards();
   setBanner(null);
   renderAssumptionsSummary(null);
+  const { applyBtn, resetBtn } = getControls();
+  const prevApplyLabel = applyBtn ? applyBtn.textContent : null;
+  if (applyBtn) {
+    applyBtn.disabled = true;
+    applyBtn.textContent = "Recomputing…";
+  }
+  if (resetBtn) resetBtn.disabled = true;
 
   try {
     const qs = new URLSearchParams();
@@ -287,6 +294,11 @@ async function load(params) {
     const el = document.getElementById("portfolio-cards");
     if (el) el.innerHTML = "";
   } finally {
+    if (applyBtn) {
+      applyBtn.disabled = false;
+      applyBtn.textContent = prevApplyLabel || "Apply / Recompute";
+    }
+    if (resetBtn) resetBtn.disabled = false;
     _loading = false;
   }
 }

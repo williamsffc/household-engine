@@ -37,6 +37,22 @@ function renderRows(el, rows, emptyText) {
   el.innerHTML = rows.join("");
 }
 
+function bindListRowInteractions(listEl, selector, onActivate) {
+  if (!listEl) return;
+  listEl.querySelectorAll(selector).forEach((el) => {
+    if (el.dataset.bound) return;
+    el.dataset.bound = "1";
+    el.setAttribute("tabindex", "0");
+    el.setAttribute("role", "button");
+    el.addEventListener("click", () => onActivate(el));
+    el.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      onActivate(el);
+    });
+  });
+}
+
 let _uploadMounted = false;
 let _loading = false;
 
@@ -323,15 +339,13 @@ async function load() {
     );
 
     // click behavior
-    listEl?.querySelectorAll("[data-doc-id]").forEach((el) => {
-      el.addEventListener("click", async () => {
-        const id = Number(el.getAttribute("data-doc-id"));
-        setParam("document_id", id);
-        await loadDetail(id, detailEl, detailMetaEl);
-        // lightweight active highlight refresh without re-fetching
-        listEl.querySelectorAll("[data-doc-id]").forEach((n) => n.classList.remove("row--active"));
-        el.classList.add("row--active");
-      });
+    bindListRowInteractions(listEl, "[data-doc-id]", async (el) => {
+      const id = Number(el.getAttribute("data-doc-id"));
+      setParam("document_id", id);
+      await loadDetail(id, detailEl, detailMetaEl);
+      // lightweight active highlight refresh without re-fetching
+      listEl.querySelectorAll("[data-doc-id]").forEach((n) => n.classList.remove("row--active"));
+      el.classList.add("row--active");
     });
 
     if (selectedId) {
@@ -346,7 +360,7 @@ async function load() {
 }
 
 async function loadDetail(documentId, detailEl, detailMetaEl) {
-  detailMetaEl.textContent = `document_id=${documentId}`;
+  if (detailMetaEl) detailMetaEl.textContent = `document_id=${documentId}`;
   try {
     const payload = await fetchJson(`/api/review-queue/${documentId}`);
     const doc = payload.document || {};
@@ -515,8 +529,8 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
               <div class="row__left">
                 <div class="row__title">Decision</div>
                 <div class="row__subtitle" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">
-                  <button class="icon-button icon-button--primary" id="rq-approve">Approve</button>
-                  <button class="icon-button icon-button--danger" id="rq-reject">Reject</button>
+                  <button class="icon-button icon-button--primary" id="rq-approve" type="button">Approve</button>
+                  <button class="icon-button icon-button--danger" id="rq-reject" type="button">Reject</button>
                   <span style="color:var(--color-text-muted);">Draft payroll does not affect analytics until approved.</span>
                 </div>
               </div>
@@ -574,24 +588,44 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
     `;
 
     if (canDecide) {
-      detailEl.querySelector("#rq-approve")?.addEventListener("click", async () => {
+      detailEl.querySelector("#rq-approve")?.addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        if (btn && btn.disabled) return;
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Approving…";
+        }
         try {
           await postJson(`/api/review-queue/${documentId}/approve`, {});
           setParam("document_id", null);
           await load();
         } catch (e) {
           setBannerError(e.message || String(e));
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Approve";
+          }
         }
       });
 
-      detailEl.querySelector("#rq-reject")?.addEventListener("click", async () => {
+      detailEl.querySelector("#rq-reject")?.addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        if (btn && btn.disabled) return;
         const reason = window.prompt("Reject reason (optional):", "") || "";
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Rejecting…";
+        }
         try {
           await postJson(`/api/review-queue/${documentId}/reject`, reason.trim() ? { reason: reason.trim() } : {});
           setParam("document_id", null);
           await load();
         } catch (e) {
           setBannerError(e.message || String(e));
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Reject";
+          }
         }
       });
     }

@@ -43,10 +43,11 @@ Completed:
 * Step 28
 * Step 29
 * Step 30
+* Step 31
 
 Current active step:
 
-* Step 31 — Review, Traceability, and Command-Center Polish
+* Step 32 — Real-Usage Polish Pass
 
 ## Current status
 
@@ -70,6 +71,7 @@ Household Engine is now:
 * plus richer review artifact / audit surfacing
 * plus latest decision summary
 * plus compact decision metadata summary
+* plus review/traceability readability polish
 
 ## What is working now
 
@@ -128,6 +130,8 @@ Household Engine is now:
 * review artifact metadata now surfaces in Review Queue detail
 * latest decision summary now appears in Review Queue and Payroll detail
 * compact decision metadata summary now appears in Review Queue and Payroll detail
+* audit rows now use human-readable labels and cleaner summarized details
+* decision metadata row now also shows decided_at / decision_actor when present
 
 ### Payroll page
 
@@ -140,8 +144,7 @@ Household Engine is now:
 * payroll status presentation is clearer across approved / rejected / in_review
 * Payroll detail shows rejection reason when present
 * Payroll detail supports reopening approved/rejected payroll back into review
-* Payroll detail shows recent lifecycle history and OCR/noisy-draft hints
-* Payroll detail shows latest decision summary and decision metadata summary
+* Payroll detail shows recent lifecycle history, OCR/noisy-draft hints, latest decision summary, and decision metadata summary
 
 ### Portfolio / planning
 
@@ -257,13 +260,13 @@ This means:
 
 ## What is not implemented yet
 
-### Combined polish pass
+### Real-usage polish backlog
 
-* there is still room for a modest combined polish pass across:
+* there is still room for a modest real-usage polish pass across:
   * review clarity
-  * traceability readability
-  * extraction rough edges
   * command-center consistency
+  * small extraction rough edges
+  * wording/readability consistency
 
 ### Deferred advanced items
 
@@ -277,10 +280,10 @@ This means:
 
 Proceed with:
 
-* Step 31 — Review, Traceability, and Command-Center Polish
+* Step 32 — Real-Usage Polish Pass
 
 ## Important current truth
 
-The product has moved from major feature-building into refinement.
+The app is feature-complete enough for its intended local-first household workflow.
 
-The next best move is a combined polish/stabilization pass that improves trust, readability, and day-to-day usability without opening a large new subsystem.
+The next best move is not a big new feature, but a grounded polish pass based on actual friction and real usage.

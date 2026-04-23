@@ -37,6 +37,22 @@ function renderRows(el, rows, emptyText) {
   el.innerHTML = rows.join("");
 }
 
+function bindListRowInteractions(listEl, selector, onActivate) {
+  if (!listEl) return;
+  listEl.querySelectorAll(selector).forEach((el) => {
+    if (el.dataset.bound) return;
+    el.dataset.bound = "1";
+    el.setAttribute("tabindex", "0");
+    el.setAttribute("role", "button");
+    el.addEventListener("click", () => onActivate(el));
+    el.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      onActivate(el);
+    });
+  });
+}
+
 function setBannerError(message) {
   const el = document.getElementById("payroll-status");
   if (!el) return;
@@ -281,14 +297,12 @@ async function load() {
       "No payroll paystubs found for the selected view."
     );
 
-    listEl?.querySelectorAll("[data-paystub-id]").forEach((el) => {
-      el.addEventListener("click", async () => {
-        const id = Number(el.getAttribute("data-paystub-id"));
-        setParam("paystub_id", id);
-        await loadDetail(id, detailEl, detailMetaEl);
-        listEl.querySelectorAll("[data-paystub-id]").forEach((n) => n.classList.remove("row--active"));
-        el.classList.add("row--active");
-      });
+    bindListRowInteractions(listEl, "[data-paystub-id]", async (el) => {
+      const id = Number(el.getAttribute("data-paystub-id"));
+      setParam("paystub_id", id);
+      await loadDetail(id, detailEl, detailMetaEl);
+      listEl.querySelectorAll("[data-paystub-id]").forEach((n) => n.classList.remove("row--active"));
+      el.classList.add("row--active");
     });
 
     if (selectedId) {
@@ -516,11 +530,17 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
       }
     `;
 
-    const reopenBtn = document.getElementById("payroll-reopen");
+    const reopenBtn = detailEl?.querySelector("#payroll-reopen");
     if (reopenBtn && !reopenBtn.dataset.bound) {
       reopenBtn.dataset.bound = "1";
-      reopenBtn.addEventListener("click", async () => {
+      reopenBtn.addEventListener("click", async (e) => {
+        const btn = e.currentTarget;
+        if (btn && btn.disabled) return;
         const reason = window.prompt("Optional reopen reason (stored in audit log):", "") || "";
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Reopening…";
+        }
         try {
           await postJson(`/api/review-queue/${encodeURIComponent(String(p.document_id))}/reopen`, {
             reason: reason.trim() ? reason.trim() : null,
@@ -528,6 +548,10 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
           window.location.href = `/review-queue?document_id=${encodeURIComponent(String(p.document_id))}`;
         } catch (err) {
           setBannerError(err.message || String(err));
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Reopen into Review Queue";
+          }
         }
       });
     }

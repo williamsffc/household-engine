@@ -559,6 +559,16 @@ html[data-theme="dark"] .skeleton__line {
   cursor: pointer;
 }
 
+.list-row:hover {
+  border-color: var(--color-border-strong);
+  background: var(--color-surface);
+}
+
+.list-row:focus-visible {
+  outline: 3px solid var(--color-accent-soft);
+  outline-offset: 2px;
+}
+
 .list-row__meta {
   display: flex;
   gap: 8px;

@@ -1,10 +1,10 @@
-# Step 31 — Review, Traceability, and Command-Center Polish
+# Step 32 — Real-Usage Polish Pass
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 30 and is now best described as:
+Household Engine is complete through Step 31 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -24,6 +24,7 @@ Household Engine is complete through Step 30 and is now best described as:
 * plus richer review artifact / audit surfacing
 * plus latest decision summary
 * plus compact decision metadata summary
+* plus review/traceability readability polish
 
 The app currently has:
 
@@ -47,9 +48,10 @@ The app currently has:
 * OCR fallback for scanned/image-like paystubs
 * reopen workflow for mistaken payroll decisions
 * recent lifecycle history + artifact metadata in Review Queue and Payroll detail
-* compact latest-decision + decision-metadata summaries
+* latest decision + decision metadata summaries
+* cleaner human-readable audit rows
 
-## Step 14A–30 status
+## Step 14A–31 status
 
 Completed enough.
 
@@ -74,6 +76,7 @@ Delivered:
 * descriptive OCR/noisy-draft hints in Review Queue and Payroll detail
 * recent lifecycle and review artifact metadata surfacing in Review Queue / Payroll detail
 * latest decision summary and compact decision metadata
+* human-readable audit rows and better traceability readability
 
 ## Product rule now locked in
 
@@ -84,125 +87,97 @@ That means:
 * household cashflow and planning remain the top-level view
 * payroll and documents still belong to specific household members
 * approved payroll remains the only payroll that affects analytics/planning
-* review surfaces should be trustworthy, readable, and modest
-* polish work should improve clarity and trust without creating heavy new systems
+* the product should now be refined based on real usage, not abstract roadmap expansion
+* polish should stay honest, modest, and high-value
 
-## Goal of Step 31
+## Goal of Step 32
 
-Do one combined polish/stabilization pass across review UX, traceability, extraction rough edges, and command-center consistency.
-
-This should tighten the app based on real usage without opening a large new subsystem.
+Do a real-usage-driven polish pass across the current app, fixing the highest-value remaining rough edges without opening a new subsystem.
 
 ## Product intent
 
-This step combines several small-but-related improvements into one refinement pass:
+The major workflows now exist.
 
-1. review polish
-2. traceability polish
-3. extraction follow-up polish
-4. command-center polish
+This step should focus on:
 
-The goal is to make the app feel more trustworthy, more readable, and more coherent in everyday use.
+* small but recurring friction
+* readability annoyances
+* modest consistency gaps
+* calm UX cleanup based on how the app actually feels in use
+
+This is a stabilization step, not a feature expansion step.
 
 ## Required outcome
 
-### Review / traceability polish
-
-1. improve decision/time/actor visibility where useful
-2. improve reason visibility where useful
-3. keep lifecycle/review context easy to scan
-4. preserve modest scope and avoid full history/versioning UI
-
-### Extraction follow-up polish
-
-5. make a few targeted heuristic improvements based on real weak spots
-6. improve OCR/native draft usefulness where low-risk
-7. avoid broad parser rewrites or fake confidence scoring
-
-### Review workflow polish
-
-8. improve small empty states / aftermath states / guidance text where useful
-9. make “why this needs review” and “what happened” slightly clearer
-
-### Command-center polish
-
-10. improve small cross-page consistency/readability/spacing where useful
-11. keep the persistent shell stable and calm
-12. avoid broad redesign
+1. identify the highest-value small rough edges in the current app
+2. fix a modest set of them cleanly
+3. improve consistency/readability/usability across key pages
+4. preserve current workflow semantics
+5. preserve current analytics semantics
+6. avoid introducing large new scope
 
 ## Scope guidance
 
-This is a combined refinement step, not a new platform phase.
+This is a polish/stabilization step.
 
 That means:
 
-* focus on small high-value improvements
-* prioritize polish based on real friction
-* reuse existing backend truth and UI patterns
-* avoid major new features
-* avoid subsystem sprawl
+* fix a few concrete issues that noticeably improve everyday use
+* prefer shared fixes over one-off hacks where possible
+* keep changes incremental
+* do not open a large new feature track
+* do not redesign the app
+* do not invent new scoring/analytics systems
 
 ## Suggested focus areas
 
-### Review / Payroll detail
+Potential candidates:
 
-* compact traceability improvements
-* decision/timestamp/actor clarity
-* reason visibility
-* calmer review messaging
-
-### Extraction follow-ups
-
-* recurring OCR/native label cleanup
-* recurring line classification edge cases
-* a few targeted heuristics only
-
-### Cross-page polish
-
-* spacing consistency
-* readability consistency
-* minor hierarchy/wording cleanup
-* stable shell behavior
+* small Review Queue readability or aftermath-state polish
+* small Payroll detail readability polish
+* small Overview/Portfolio consistency cleanup
+* spacing/stacking consistency
+* wording clarity
+* modest extraction warning presentation cleanup
+* small cache-bust/static freshness cleanup where still needed
 
 ## Files likely involved
 
-Review first:
+Review first based on the actual rough edges found, but likely:
 
+* `static/css/app.css`
 * `static/js/review_queue.js`
 * `static/js/payroll.js`
 * `static/js/overview.js`
-* `static/css/app.css`
+* `static/js/portfolio.js`
+* relevant templates:
+  * `src/templates/review_queue.html`
+  * `src/templates/payroll.html`
+  * `src/templates/overview.html`
+  * `src/templates/portfolio.html`
 
 Potentially inspect:
-
 * `src/api/routes_review.py`
 * `src/api/routes_payroll.py`
-* `src/payroll/ingest.py`
-* `src/payroll/normalizer.py`
-* `src/templates/review_queue.html`
-* `src/templates/payroll.html`
-* `src/templates/overview.html`
-* `src/templates/portfolio.html`
 
 ## Deliverables for this step
 
-1. a modest set of high-value review/traceability polish improvements
-2. a modest set of high-value extraction follow-up improvements
-3. a modest set of command-center/readability polish improvements
-4. no regression to workflow semantics
-5. no regression to analytics semantics
-6. no regression to member-aware payroll model
+1. a small set of real-usage-driven UX/readability fixes
+2. better consistency across key pages where useful
+3. no regression to workflow semantics
+4. no regression to analytics semantics
+5. no large new subsystem or redesign
 
 ## Constraints
 
 * keep changes incremental
 * no framework migration
 * no Tailwind rewrite
-* no full version-history system
+* no full history/versioning system
 * no fake confidence scoring
 * no unrelated global redesign
 * keep the system local-first and honest about data quality/state
 
-## What comes next after Step 31
+## What comes next after Step 32
 
-After Step 31, reassess based on real usage and actual friction rather than committing to a large preset roadmap.
+After Step 32, reassess based on actual use and remaining friction rather than committing to a large preset roadmap.
