@@ -16,6 +16,19 @@ async function fetchJson(path) {
   return await res.json();
 }
 
+async function postJson(path, body) {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify(body || {}),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`${path} failed: ${res.status} ${text}`);
+  }
+  return await res.json();
+}
+
 function renderRows(el, rows, emptyText) {
   if (!rows || rows.length === 0) {
     el.innerHTML = `<div class="panel__empty">${emptyText}</div>`;
@@ -202,6 +215,7 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
 
     const effective = effectiveStatusLabel(p);
     const member = escapeHtml(p.member_display_name || `member_id=${p.member_id}`);
+    const canReopen = effective === "approved" || effective === "rejected";
 
     detailEl.innerHTML = `
       <div class="row">
@@ -211,6 +225,22 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
         </div>
         <div class="pill ${pillClass(effective)}">${escapeHtml(effective)}</div>
       </div>
+
+      ${
+        canReopen
+          ? `
+            <div class="row" style="grid-template-columns: 1fr;">
+              <div class="row__left">
+                <div class="row__title">Reopen</div>
+                <div class="row__subtitle">Move this paystub back into review (removes it from approved-only analytics until re-approved).</div>
+              </div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                <button class="icon-button" type="button" id="payroll-reopen">Reopen into Review Queue</button>
+              </div>
+            </div>
+          `
+          : ``
+      }
 
       ${
         effective === "rejected" && p.rejection_reason
@@ -280,6 +310,22 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
           : `<div class="panel__empty">No payroll lines are stored yet (draft heuristic ingest).</div>`
       }
     `;
+
+    const reopenBtn = document.getElementById("payroll-reopen");
+    if (reopenBtn && !reopenBtn.dataset.bound) {
+      reopenBtn.dataset.bound = "1";
+      reopenBtn.addEventListener("click", async () => {
+        const reason = window.prompt("Optional reopen reason (stored in audit log):", "") || "";
+        try {
+          await postJson(`/api/review-queue/${encodeURIComponent(String(p.document_id))}/reopen`, {
+            reason: reason.trim() ? reason.trim() : null,
+          });
+          window.location.href = `/review-queue?document_id=${encodeURIComponent(String(p.document_id))}`;
+        } catch (err) {
+          setBannerError(err.message || String(err));
+        }
+      });
+    }
   } catch (e) {
     renderRows(detailEl, [], `Failed to load paystub: ${escapeHtml(e.message || String(e))}`);
   }

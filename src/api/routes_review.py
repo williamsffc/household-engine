@@ -13,7 +13,12 @@ from src.payroll.payroll_text_extract import extract_raw_payroll_text
 from src.payroll.extractor_ocr import OcrUnavailableError
 from src.payroll.repository import get_latest_paystub_for_document, list_lines_for_paystub
 from src.payroll.review_artifacts import get_review_artifact_for_document, upsert_review_artifact
-from src.services.review_queue import ReviewQueueError, approve_payroll_review_item, reject_payroll_review_item
+from src.services.review_queue import (
+    ReviewQueueError,
+    approve_payroll_review_item,
+    reject_payroll_review_item,
+    reopen_payroll_review_item,
+)
 
 
 router = APIRouter(prefix="/api/review-queue", tags=["review-queue"])
@@ -52,6 +57,10 @@ def _extract_and_scrub_redacted_text(*, storage_path: str) -> dict[str, Any]:
 
 
 class RejectRequest(BaseModel):
+    reason: str | None = None
+
+
+class ReopenRequest(BaseModel):
     reason: str | None = None
 
 
@@ -171,6 +180,20 @@ def reject_review_item(document_id: int, body: RejectRequest) -> dict[str, Any]:
     with db_connection() as conn:
         try:
             return reject_payroll_review_item(
+                conn,
+                document_id=int(document_id),
+                actor="user",
+                reason=(body.reason if body else None),
+            )
+        except ReviewQueueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+
+
+@router.post("/{document_id}/reopen")
+def reopen_review_item(document_id: int, body: ReopenRequest) -> dict[str, Any]:
+    with db_connection() as conn:
+        try:
+            return reopen_payroll_review_item(
                 conn,
                 document_id=int(document_id),
                 actor="user",

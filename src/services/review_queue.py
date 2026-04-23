@@ -118,3 +118,77 @@ def reject_payroll_review_item(
     )
 
     return {"ok": True, "document_id": int(document_id), "paystub_id": int(paystub["id"]), "status": "rejected"}
+
+
+def reopen_payroll_review_item(
+    conn: sqlite3.Connection,
+    *,
+    document_id: int,
+    actor: str = "user",
+    reason: str | None = None,
+) -> dict:
+    """Reopen an approved/rejected payroll item back into review (Step 25).
+
+    This:
+    - moves the document back to documents.status='in_review'
+    - moves the latest paystub back to payroll_paystubs.status='draft'
+    - clears terminal decision metadata on the paystub (audit log preserves history)
+    """
+
+    doc = conn.execute("SELECT * FROM documents WHERE id = ?;", (int(document_id),)).fetchone()
+    if doc is None:
+        raise ReviewQueueError("Document not found")
+    if str(doc["module_owner"]) != "payroll":
+        raise ReviewQueueError("Only payroll documents support reopen workflow")
+    if doc["member_id"] is None:
+        raise ReviewQueueError("Payroll documents must have member_id")
+
+    doc_status = str(doc["status"] or "")
+    if doc_status not in {"approved", "rejected"}:
+        raise ReviewQueueError("Only approved or rejected documents can be reopened")
+
+    paystub = get_latest_paystub_for_document(conn, int(document_id))
+    if paystub is None:
+        raise ReviewQueueError("No payroll paystub found for document")
+
+    ps_status = str(paystub.get("status") or "")
+    if ps_status not in {"approved", "rejected"}:
+        raise ReviewQueueError("Latest paystub is not approved/rejected; cannot reopen")
+
+    if int(paystub.get("member_id")) != int(doc["member_id"]):
+        raise ReviewQueueError("Member ownership mismatch between document and paystub")
+
+    conn.execute(
+        """
+        UPDATE payroll_paystubs
+        SET
+            status = 'draft',
+            decided_at = NULL,
+            decision_actor = NULL,
+            rejection_reason = NULL,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?;
+        """,
+        (int(paystub["id"]),),
+    )
+    conn.execute(
+        "UPDATE documents SET status = 'in_review', updated_at = CURRENT_TIMESTAMP WHERE id = ?;",
+        (int(document_id),),
+    )
+
+    details = (
+        f"paystub_id={int(paystub['id'])}, member_id={int(doc['member_id'])}, "
+        f"from_document_status={doc_status}, from_paystub_status={ps_status}"
+    )
+    if reason is not None and str(reason).strip():
+        details += f", reason={str(reason).strip()}"
+
+    write_audit_log(
+        conn,
+        document_id=int(document_id),
+        actor=str(actor or "user"),
+        action="payroll_reopened",
+        details=details,
+    )
+
+    return {"ok": True, "document_id": int(document_id), "paystub_id": int(paystub["id"]), "status": "in_review"}

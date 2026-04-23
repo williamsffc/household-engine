@@ -36,10 +36,11 @@ Completed:
 * Step 21
 * Step 22
 * Step 23
+* Step 24
 
 Current active step:
 
-* Step 24 — Scanned-PDF OCR support
+* Step 25 — Reopen / undo workflow for payroll decisions
 
 ## Current status
 
@@ -57,6 +58,7 @@ Household Engine is now:
 * plus persistent shell scroll behavior
 * plus Overview household readiness strip
 * plus improved native-text payroll extraction quality
+* plus scanned-PDF OCR fallback support
 
 ## What is working now
 
@@ -113,6 +115,11 @@ Household Engine is now:
   * better gross/net matching
   * payroll line extraction now feeds persisted draft lines
   * validator now receives lines_total_taxes_deductions
+* scanned-PDF OCR fallback now exists:
+  * native PDF text remains preferred
+  * OCR fallback runs only when native text is empty/insufficient
+  * OCR text flows into the same scrub + extraction + review path
+  * OCR use is surfaced honestly via ocr_used / extraction_source metadata
 
 ### Payroll page
 
@@ -251,15 +258,15 @@ This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
-### Payroll OCR / next improvements
-
-* scanned-PDF OCR fallback is still missing
-* scanned/image-like payroll PDFs can still fail when native text is insufficient
-* payroll extraction quality on OCR text is still not broadened yet
-
-### Review queue / lifecycle refinements
+### Payroll lifecycle refinement
 
 * no reopen/undo workflow yet for approve/reject
+* approved/rejected payroll decisions are still terminal
+
+### Later quality refinements
+
+* additional payroll extraction quality work may still be useful
+* richer review artifact expansion may still be useful
 
 ### Deferred advanced items
 
@@ -273,14 +280,10 @@ This is the intended model for Person-M and Person-W going forward.
 
 Proceed with:
 
-* Step 24 — Scanned-PDF OCR support
-
-Then:
-
 * Step 25 — Reopen / undo workflow for payroll decisions
 
 ## Important current truth
 
-The native-text payroll path is stronger now.
+The payroll pipeline is now stronger on both native-text and scanned/image-like documents.
 
-The next best move is to add a conservative OCR fallback for scanned/image-like paystubs so the review-driven payroll workflow covers more real-world documents.
+The next best move is to add a controlled reopen path so mistaken approvals/rejections can be corrected without weakening the review-driven model.

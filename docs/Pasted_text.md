@@ -1,10 +1,10 @@
-# Step 24 — Scanned-PDF OCR Support
+# Step 25 — Reopen / Undo Workflow for Payroll Decisions
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 23 and is now best described as:
+Household Engine is complete through Step 24 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -18,6 +18,7 @@ Household Engine is complete through Step 23 and is now best described as:
 * plus persistent shell scroll behavior
 * plus Overview household readiness strip
 * plus improved native-text payroll extraction quality
+* plus scanned-PDF OCR fallback support
 
 The app currently has:
 
@@ -38,8 +39,9 @@ The app currently has:
 * persistent topbar/nav with main-content scrolling
 * Overview readiness strip
 * better native-text payroll field and line extraction
+* OCR fallback for scanned/image-like paystubs
 
-## Step 14A–23 status
+## Step 14A–24 status
 
 Completed enough.
 
@@ -58,6 +60,7 @@ Delivered:
 * persistent shell/topbar/nav with main content as the primary scroll region
 * Overview readiness strip with honest household data-readiness signals
 * improved native-text payroll extraction and payroll line usefulness
+* scanned-PDF OCR fallback integrated into payroll ingest and review regeneration
 
 ## Product rule now locked in
 
@@ -68,130 +71,127 @@ That means:
 * household cashflow and planning remain the top-level view
 * payroll and documents still belong to specific household members
 * approved payroll remains the only payroll that affects analytics/planning
-* OCR support must preserve ownership, review honesty, and approval semantics
-* OCR-extracted drafts should still remain review-driven and honest about quality limits
+* review decisions should remain auditable and reversible in a controlled way
+* reopening a decision must preserve honesty about workflow state
 
-## Goal of Step 24
+## Goal of Step 25
 
-Add scanned-PDF OCR support so payroll ingestion can still produce a reviewable draft when native PDF text extraction is missing or insufficient.
+Add a controlled reopen / undo workflow for payroll decisions so previously approved or rejected payroll items can be returned to review when needed.
 
-This step should broaden payroll intake coverage while keeping the workflow conservative and review-based.
+This should be a modest lifecycle refinement, not a broad workflow rewrite.
 
 ## Product intent
 
-Right now payroll ingestion works best when native PDF text is available.
+Right now approve/reject is terminal.
 
-This step should support cases where:
+That is workable, but less forgiving when:
 
-* a paystub PDF is scanned or image-like
-* pdfplumber returns little or no usable text
-* the current native-text path fails too early
+* OCR fallback produces noisy drafts
+* extraction quality improves after a re-ingest
+* a user approves/rejects too quickly
+* a mistake is noticed later
 
-The goal is not perfect OCR.  
-The goal is to produce a modest, reviewable draft rather than a dead end.
+This step should add a controlled way to move a payroll item back into review without weakening the overall review-driven model.
 
 ## Required outcome
 
-Add OCR support for scanned payroll PDFs with focus on:
+Add reopen / undo support with focus on:
 
-1. detecting when native text is missing or insufficient
-2. invoking OCR fallback in a contained, honest way
-3. feeding OCR text into the same existing extraction/review path where practical
-4. preserving ownership, review, and approval semantics
-5. signaling clearly when OCR fallback was used
-6. avoiding false confidence about OCR quality
+1. reopening previously approved payroll back to review
+2. reopening previously rejected payroll back to review
+3. preserving member ownership truth
+4. preserving auditability of decisions
+5. handling analytics consequences honestly when approved payroll is reopened
+6. keeping the Review Queue / Payroll page semantics understandable
 
 ## Scope guidance
 
-This is an OCR fallback step, not a document-intelligence rewrite.
+This is a lifecycle refinement step, not a redesign of the payroll system.
 
 That means:
 
-* add a modest OCR fallback path
-* keep the downstream extraction/review pipeline consistent where possible
-* make OCR usage visible in artifacts/review payloads
-* keep the system honest about quality limitations
-* do not broaden into advanced visual annotation/redaction
-* do not redesign the whole payroll pipeline
-* do not weaken review-driven approval semantics
+* add a modest reopen path
+* update statuses coherently
+* preserve approval/canonical semantics
+* preserve audit trail
+* keep UI additions narrow and clear
+* do not add a full version-history system
+* do not redesign the whole review workflow
 
 ## Suggested focus areas
 
-### OCR fallback trigger
+### Reopen semantics
 
-Handle cases where native PDF text is:
+Define the intended status transition clearly, for example:
 
-* empty
-* too sparse
-* clearly unusable for payroll extraction
+* approved -> in_review / draft
+* rejected -> in_review / draft
 
-The trigger should be conservative and explainable.
+The reopened item should become reviewable again.
 
-### OCR text integration
+### Analytics correctness
 
-Feed OCR text into the existing extraction path as much as possible so:
+If an approved payroll item is reopened:
 
-* field extraction
-* payroll lines
-* validation
-* review payloads
+* it should stop counting toward approved-only analytics
+* household/per-member totals should stay truthful
 
-continue to behave consistently.
+### Auditability
 
-### OCR visibility
+Reopen events should be clearly recorded.
 
-Make sure the system captures and surfaces when OCR was used, for example in:
+If practical, capture a simple reopen reason.
 
-* document metadata
-* review artifact metadata
-* review/payload/UI hints if already supported
+### UI placement
 
-### Honesty
+The most likely places for reopen controls are:
 
-OCR-backed results should remain draft-level and review-oriented.  
-The UI and payloads should not imply that OCR is as trustworthy as high-quality native text.
+* Payroll page detail
+* Review Queue detail for eligible items if appropriate
+
+Keep the UI modest and honest.
 
 ## Files likely involved
 
 Review first:
 
-* `src/payroll/ingest.py`
-* `src/payroll/extractor_pdf.py`
-* `src/payroll/extractor_ocr.py`
-* `src/payroll/review_artifacts.py`
+* `src/services/review_queue.py`
 * `src/api/routes_review.py`
+* `src/api/routes_payroll.py`
+* `src/payroll/repository.py`
+* `src/templates/review_queue.html`
+* `src/templates/payroll.html`
+* `static/js/review_queue.js`
+* `static/js/payroll.js`
 
 Potentially inspect:
 
-* document metadata / ocr_used handling
+* audit log writing
 * review payload composition
-* any current OCR helper implementation already present but underused
+* any queries that assume approved/rejected are terminal forever
 
 ## Deliverables for this step
 
-1. scanned-PDF OCR fallback for payroll ingest
-2. conservative trigger for OCR usage
-3. OCR text feeding into the existing extraction/review path
-4. honest metadata/signaling when OCR is used
-5. no regression to approval/canonical workflow
+1. reopen / undo workflow for approved/rejected payroll decisions
+2. coherent status transitions back into review
+3. preserved audit trail
+4. truthful analytics behavior when reopened items leave approved status
+5. modest UI support where appropriate
 6. no regression to member-aware payroll model
-7. no regression to approved-only analytics semantics
 
 ## Constraints
 
 * keep changes incremental
 * no framework migration
 * no Tailwind rewrite
-* no visual PDF annotation/redaction system
 * no unrelated global redesign
-* keep the system local-first and honest about OCR quality/state
+* no full history/versioning system
+* keep the system local-first and honest about workflow state
 
-## What comes next after Step 24
+## What comes next after Step 25
 
-After Step 24, the next roadmap order becomes:
+After Step 25, next work should be chosen based on the highest practical value, likely from:
 
-* Step 25 — Reopen / undo workflow for payroll decisions
-
-Additional later work can still include:
+* additional payroll extraction quality improvements
 * richer review artifact expansion
-* further payroll extraction quality improvements
+* broader document-quality refinements
