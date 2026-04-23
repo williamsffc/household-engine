@@ -303,14 +303,38 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
     const lines = Array.isArray(review.draft_lines) ? review.draft_lines : [];
     const canDecide = String(doc.status) === "in_review" && String(paystub.status) === "draft";
 
+    const exSrc = review.extraction_source ? String(review.extraction_source) : "";
+    let extractionCallout = "";
+    if (exSrc === "pdf_ocr_fallback") {
+      extractionCallout = `
+        <div class="callout callout--info">
+          <div class="callout__title">Text source</div>
+          <div class="callout__body">PDF OCR fallback — selectable text was missing or insufficient. Draft may be noisy; verify all fields against the original.</div>
+        </div>`;
+    } else if (exSrc === "image_ocr") {
+      extractionCallout = `
+        <div class="callout callout--info">
+          <div class="callout__title">Text source</div>
+          <div class="callout__body">Image OCR — verify all fields carefully.</div>
+        </div>`;
+    } else if (exSrc === "native_pdf") {
+      extractionCallout = `
+        <div class="callout callout--info">
+          <div class="callout__title">Text source</div>
+          <div class="callout__body">Native PDF text extraction.</div>
+        </div>`;
+    }
+
     detailEl.innerHTML = `
       <div class="row">
         <div class="row__left">
           <div class="row__title">${escapeHtml(doc.original_filename || `Document ${documentId}`)}</div>
-          <div class="row__subtitle">${escapeHtml(doc.module_owner)} · status ${escapeHtml(doc.status)} · uploaded ${escapeHtml(doc.uploaded_at)}</div>
+          <div class="row__subtitle">${escapeHtml(doc.module_owner)} · status ${escapeHtml(doc.status)} · uploaded ${escapeHtml(doc.uploaded_at)} · text ${escapeHtml(doc.ocr_used ? "OCR" : "native")}</div>
         </div>
         <div class="pill pill--review">${escapeHtml(doc.status)}</div>
       </div>
+
+      ${extractionCallout}
 
       ${
         canDecide

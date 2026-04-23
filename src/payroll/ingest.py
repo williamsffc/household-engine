@@ -5,9 +5,9 @@ import re
 from pathlib import Path
 
 from src.core.database import db_connection, get_repo_root
-from src.payroll.extractor_ocr import OcrUnavailableError, ocr_image
-from src.payroll.extractor_pdf import extract_text_from_pdf
+from src.payroll.extractor_ocr import OcrUnavailableError
 from src.payroll.normalizer import DraftPayrollLine, DraftPaystub, parse_date_any, parse_money
+from src.payroll.payroll_text_extract import extract_raw_payroll_text
 from src.payroll.pii_scrubber import scrub_pii
 from src.payroll.repository import delete_draft_for_document, fetch_document, insert_draft_lines, insert_draft_paystub
 from src.payroll.validator import validate_paystub
@@ -424,17 +424,6 @@ def _extract_payroll_lines_from_text(text: str, *, max_lines: int = 55) -> tuple
     return out, td_total
 
 
-def _looks_like_scanned_pdf(*, page_count: int, extracted_text: str) -> bool:
-    if page_count <= 0:
-        return False
-    txt = (extracted_text or "").strip()
-    if len(txt) < 50:
-        return True
-    alpha = sum(1 for c in txt if c.isalpha())
-    ratio = alpha / max(1, len(txt))
-    return ratio < 0.05
-
-
 def _draft_lines_to_json(lines: list[DraftPayrollLine]) -> list[dict]:
     return [
         {
@@ -474,29 +463,22 @@ def ingest_payroll_document(document_id: int) -> dict:
     if not full_path.exists():
         raise PayrollIngestError(f"Storage file not found: {storage_path}")
 
-    raw_text = ""
-    ocr_used = False
     suffix = full_path.suffix.lower()
 
-    if suffix == ".pdf":
-        pdf_res = extract_text_from_pdf(full_path)
-        raw_text = pdf_res.text
-        if not raw_text:
-            raise PayrollIngestError(
-                "No native PDF text found (likely scanned). OCR for scanned PDFs is not implemented yet. "
-                "Try uploading an image (.png/.jpg) of the paystub for OCR, or install a PDF OCR pipeline."
-            )
-    elif suffix in {".png", ".jpg", ".jpeg"}:
-        try:
-            ocr_res = ocr_image(full_path)
-            raw_text = ocr_res.text
-            ocr_used = True
-        except OcrUnavailableError as e:
-            raise PayrollIngestError(str(e)) from e
-    else:
-        raise PayrollIngestError(f"Unsupported payroll file type: {suffix}")
+    try:
+        bundle = extract_raw_payroll_text(full_path)
+    except OcrUnavailableError as e:
+        raise PayrollIngestError(str(e)) from e
+    except FileNotFoundError as e:
+        raise PayrollIngestError(str(e)) from e
+    except ValueError as e:
+        raise PayrollIngestError(str(e)) from e
 
-    if not raw_text.strip():
+    raw_text = bundle.text
+    ocr_used = bundle.ocr_used
+    extraction_source = bundle.extraction_source
+
+    if not (raw_text or "").strip():
         raise PayrollIngestError("Extracted text is empty")
 
     scrub = scrub_pii(raw_text)
@@ -514,16 +496,25 @@ def ingest_payroll_document(document_id: int) -> dict:
         lines_total_taxes_deductions=lines_total_taxes_deductions,
     )
 
+    val_warnings = list(validation.warnings)
+    if ocr_used:
+        val_warnings.append(
+            "extracted_text_source: OCR — native text was missing or insufficient; verify all fields carefully."
+        )
+    validation_summary_payload = {
+        "warnings": val_warnings,
+        "ok": validation.ok,
+        "extraction_source": extraction_source,
+    }
+
     if not pay_date:
         pdf_diag = None
         if suffix == ".pdf":
             pdf_diag = {
-                "page_count": getattr(pdf_res, "page_count", None),
+                "page_count": bundle.pdf_page_count,
                 "text_chars": len(raw_text or ""),
-                "likely_scanned": _looks_like_scanned_pdf(
-                    page_count=int(getattr(pdf_res, "page_count", 0) or 0),
-                    extracted_text=raw_text or "",
-                ),
+                "native_pdf_chars": bundle.native_pdf_chars,
+                "extraction_source": extraction_source,
             }
         raise PayrollIngestError(
             "Could not infer pay_date from extracted text (required for draft paystub). "
@@ -556,7 +547,7 @@ def ingest_payroll_document(document_id: int) -> dict:
             member_id=member_id,
             institution_id=institution_id,
             draft=draft,
-            validation_summary=json.dumps({"warnings": validation.warnings, "ok": validation.ok}),
+            validation_summary=json.dumps(validation_summary_payload),
         )
         inserted_lines = insert_draft_lines(conn, paystub_id=paystub_id, lines=draft_lines)
 
@@ -593,6 +584,7 @@ def ingest_payroll_document(document_id: int) -> dict:
         "paystub_id": paystub_id,
         "document_status": "in_review",
         "ocr_used": ocr_used,
+        "extraction_source": extraction_source,
         "redaction_counts": scrub.redaction_counts,
         "draft": {
             "pay_date": draft.pay_date,
@@ -603,5 +595,5 @@ def ingest_payroll_document(document_id: int) -> dict:
             "currency": draft.currency,
             "lines": _draft_lines_to_json(draft_lines),
         },
-        "validation": {"ok": validation.ok, "warnings": validation.warnings},
+        "validation": {"ok": validation.ok, "warnings": val_warnings},
     }

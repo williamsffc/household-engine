@@ -3,6 +3,7 @@ uvicorn[standard]
 python-multipart
 pandas
 pdfplumber
+pymupdf
 pyyaml
 openpyxl
 pytesseract

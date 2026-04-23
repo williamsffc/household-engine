@@ -35,10 +35,11 @@ Completed:
 * Step 20
 * Step 21
 * Step 22
+* Step 23
 
 Current active step:
 
-* Step 23 — Payroll extraction quality improvements
+* Step 24 — Scanned-PDF OCR support
 
 ## Current status
 
@@ -55,6 +56,7 @@ Household Engine is now:
 * plus Portfolio controls + recompute UX
 * plus persistent shell scroll behavior
 * plus Overview household readiness strip
+* plus improved native-text payroll extraction quality
 
 ## What is working now
 
@@ -105,6 +107,12 @@ Household Engine is now:
   * decided_at
   * decision_actor
   * rejection_reason
+* native-text payroll extraction quality improved:
+  * broader pay date extraction
+  * broader pay period extraction
+  * better gross/net matching
+  * payroll line extraction now feeds persisted draft lines
+  * validator now receives lines_total_taxes_deductions
 
 ### Payroll page
 
@@ -243,11 +251,11 @@ This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
-### Payroll quality / next improvements
+### Payroll OCR / next improvements
 
-* payroll extraction quality still has room to improve on the native-text path
-* payroll line detail can still be sparse
-* scanned-PDF/OCR robustness still needs improvement
+* scanned-PDF OCR fallback is still missing
+* scanned/image-like payroll PDFs can still fail when native text is insufficient
+* payroll extraction quality on OCR text is still not broadened yet
 
 ### Review queue / lifecycle refinements
 
@@ -265,15 +273,14 @@ This is the intended model for Person-M and Person-W going forward.
 
 Proceed with:
 
-* Step 23 — Payroll extraction quality improvements
+* Step 24 — Scanned-PDF OCR support
 
 Then:
 
-* Step 24 — Scanned-PDF OCR support
 * Step 25 — Reopen / undo workflow for payroll decisions
 
 ## Important current truth
 
-The command-center shell and Overview clarity are now in good shape.
+The native-text payroll path is stronger now.
 
-The next best move is to improve payroll extraction quality on the existing native-text path before adding OCR complexity.
+The next best move is to add a conservative OCR fallback for scanned/image-like paystubs so the review-driven payroll workflow covers more real-world documents.

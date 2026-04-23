@@ -8,9 +8,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from src.core.database import db_connection, get_repo_root
-from src.payroll.extractor_ocr import OcrUnavailableError, ocr_image
-from src.payroll.extractor_pdf import extract_text_from_pdf
 from src.payroll.pii_scrubber import scrub_pii
+from src.payroll.payroll_text_extract import extract_raw_payroll_text
+from src.payroll.extractor_ocr import OcrUnavailableError
 from src.payroll.repository import get_latest_paystub_for_document, list_lines_for_paystub
 from src.payroll.review_artifacts import get_review_artifact_for_document, upsert_review_artifact
 from src.services.review_queue import ReviewQueueError, approve_payroll_review_item, reject_payroll_review_item
@@ -24,44 +24,29 @@ def _row_to_dict(row) -> dict[str, Any]:
 
 
 def _extract_and_scrub_redacted_text(*, storage_path: str) -> dict[str, Any]:
-    """Regenerate redacted text on-demand (Step 6).
-
-    We do not persist redacted text yet, so this rebuilds it from the stored raw file.
-    """
+    """Regenerate redacted text on-demand (same path as payroll ingest: native PDF or OCR fallback)."""
 
     repo_root = get_repo_root()
     full_path = (repo_root / Path(storage_path)).resolve()
     if not full_path.exists():
         raise HTTPException(status_code=400, detail=f"Storage file not found: {storage_path}")
 
-    suffix = full_path.suffix.lower()
-    raw_text = ""
-    ocr_used = False
+    try:
+        bundle = extract_raw_payroll_text(full_path)
+    except OcrUnavailableError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
-    if suffix == ".pdf":
-        pdf_res = extract_text_from_pdf(full_path)
-        raw_text = pdf_res.text
-        if not raw_text:
-            # Keep honest: scanned PDFs will not show useful text here.
-            raise HTTPException(
-                status_code=400,
-                detail="No native PDF text found (likely scanned). PDF OCR is not implemented yet.",
-            )
-    elif suffix in {".png", ".jpg", ".jpeg"}:
-        try:
-            raw_text = ocr_image(full_path).text
-            ocr_used = True
-        except OcrUnavailableError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
-    else:
-        raise HTTPException(status_code=400, detail=f"Unsupported payroll file type: {suffix}")
-
-    scrub = scrub_pii(raw_text)
+    scrub = scrub_pii(bundle.text)
     return {
         "redacted_text": scrub.redacted_text,
         "redaction_counts": scrub.redaction_counts,
-        "text_chars": len(raw_text or ""),
-        "ocr_used_for_review": ocr_used,
+        "text_chars": len(bundle.text or ""),
+        "ocr_used_for_review": bundle.ocr_used,
+        "extraction_source": bundle.extraction_source,
         "source": "regenerated_on_read",
     }
 
@@ -137,12 +122,17 @@ def get_review_payload(document_id: int) -> dict[str, Any]:
 
     # Validation warnings: best-effort parse from validation_summary JSON string.
     warnings: list[str] = []
+    extraction_source: str | None = None
     vs = paystub.get("validation_summary")
     if isinstance(vs, str) and vs.strip():
         try:
             parsed = json.loads(vs)
-            if isinstance(parsed, dict) and isinstance(parsed.get("warnings"), list):
-                warnings = [str(w) for w in parsed.get("warnings") if w is not None]
+            if isinstance(parsed, dict):
+                if isinstance(parsed.get("warnings"), list):
+                    warnings = [str(w) for w in parsed.get("warnings") if w is not None]
+                es = parsed.get("extraction_source")
+                if isinstance(es, str) and es.strip():
+                    extraction_source = es.strip()
         except Exception:
             warnings = []
 
@@ -159,6 +149,7 @@ def get_review_payload(document_id: int) -> dict[str, Any]:
             "redacted_text": artifact.get("redacted_text") or "",
             "redaction_counts": artifact.get("redaction_counts") or {},
             "redacted_text_source": artifact.get("source") or "persisted",
+            "extraction_source": extraction_source,
             "validation_warnings": warnings,
             "draft_paystub": paystub,
             "draft_lines": lines,
