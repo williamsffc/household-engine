@@ -1,10 +1,10 @@
-# Step 30 — Decision Metadata Summary Polish
+# Step 31 — Review, Traceability, and Command-Center Polish
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 29 and is now best described as:
+Household Engine is complete through Step 30 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -23,6 +23,7 @@ Household Engine is complete through Step 29 and is now best described as:
 * plus OCR / noisy-draft review hints
 * plus richer review artifact / audit surfacing
 * plus latest decision summary
+* plus compact decision metadata summary
 
 The app currently has:
 
@@ -46,9 +47,9 @@ The app currently has:
 * OCR fallback for scanned/image-like paystubs
 * reopen workflow for mistaken payroll decisions
 * recent lifecycle history + artifact metadata in Review Queue and Payroll detail
-* latest decision summary in review-oriented detail views
+* compact latest-decision + decision-metadata summaries
 
-## Step 14A–29 status
+## Step 14A–30 status
 
 Completed enough.
 
@@ -72,7 +73,7 @@ Delivered:
 * targeted OCR-friendly extraction cleanup and line classification improvements
 * descriptive OCR/noisy-draft hints in Review Queue and Payroll detail
 * recent lifecycle and review artifact metadata surfacing in Review Queue / Payroll detail
-* latest decision summary above the lifecycle list
+* latest decision summary and compact decision metadata
 
 ## Product rule now locked in
 
@@ -83,101 +84,125 @@ That means:
 * household cashflow and planning remain the top-level view
 * payroll and documents still belong to specific household members
 * approved payroll remains the only payroll that affects analytics/planning
-* history/decision surfacing should help users understand status quickly
-* the UI should prefer compact, honest summaries over dense audit presentation
+* review surfaces should be trustworthy, readable, and modest
+* polish work should improve clarity and trust without creating heavy new systems
 
-## Goal of Step 30
+## Goal of Step 31
 
-Add a small “decision metadata” summary block so the most important decision-specific details are visible immediately without requiring users to scan lifecycle details.
+Do one combined polish/stabilization pass across review UX, traceability, extraction rough edges, and command-center consistency.
+
+This should tighten the app based on real usage without opening a large new subsystem.
 
 ## Product intent
 
-Right now the app shows:
+This step combines several small-but-related improvements into one refinement pass:
 
-* latest decision summary
-* recent lifecycle list
-* rejection reason in some places
+1. review polish
+2. traceability polish
+3. extraction follow-up polish
+4. command-center polish
 
-This step should tighten that into a cleaner, more obvious summary of the current decision state, especially when:
-
-* a paystub is currently rejected
-* a paystub was recently reopened
-* a useful reason exists
+The goal is to make the app feel more trustworthy, more readable, and more coherent in everyday use.
 
 ## Required outcome
 
-Add compact decision metadata surfacing with focus on:
+### Review / traceability polish
 
-1. clear rejection reason display when currently rejected
-2. clear reopen reason/context when recently reopened and available
-3. calm, compact placement near latest decision summary
-4. no regression to recent lifecycle list
-5. no regression to workflow semantics
-6. no regression to analytics semantics
+1. improve decision/time/actor visibility where useful
+2. improve reason visibility where useful
+3. keep lifecycle/review context easy to scan
+4. preserve modest scope and avoid full history/versioning UI
+
+### Extraction follow-up polish
+
+5. make a few targeted heuristic improvements based on real weak spots
+6. improve OCR/native draft usefulness where low-risk
+7. avoid broad parser rewrites or fake confidence scoring
+
+### Review workflow polish
+
+8. improve small empty states / aftermath states / guidance text where useful
+9. make “why this needs review” and “what happened” slightly clearer
+
+### Command-center polish
+
+10. improve small cross-page consistency/readability/spacing where useful
+11. keep the persistent shell stable and calm
+12. avoid broad redesign
 
 ## Scope guidance
 
-This is a small trust/traceability polish step, not a new workflow system.
+This is a combined refinement step, not a new platform phase.
 
 That means:
 
-* use already-available decision/audit data where possible
-* keep the UI compact
-* avoid duplicate clutter
-* keep the recent lifecycle list below for deeper detail
-* do not redesign the pages
-* do not build a full history viewer
+* focus on small high-value improvements
+* prioritize polish based on real friction
+* reuse existing backend truth and UI patterns
+* avoid major new features
+* avoid subsystem sprawl
 
 ## Suggested focus areas
 
-### Current rejected state
+### Review / Payroll detail
 
-If the paystub is currently rejected and a rejection reason exists, make it very visible.
+* compact traceability improvements
+* decision/timestamp/actor clarity
+* reason visibility
+* calmer review messaging
 
-### Recently reopened state
+### Extraction follow-ups
 
-If the latest decision is reopen and an optional reason exists, surface it clearly.
+* recurring OCR/native label cleanup
+* recurring line classification edge cases
+* a few targeted heuristics only
 
-### Placement
+### Cross-page polish
 
-Best likely surfaces:
-
-* Payroll detail
-* Review Queue detail, where useful
-
-Keep it near the latest decision summary.
+* spacing consistency
+* readability consistency
+* minor hierarchy/wording cleanup
+* stable shell behavior
 
 ## Files likely involved
 
 Review first:
 
-* `src/api/routes_review.py`
-* `src/api/routes_payroll.py`
 * `static/js/review_queue.js`
 * `static/js/payroll.js`
+* `static/js/overview.js`
 * `static/css/app.css`
+
+Potentially inspect:
+
+* `src/api/routes_review.py`
+* `src/api/routes_payroll.py`
+* `src/payroll/ingest.py`
+* `src/payroll/normalizer.py`
+* `src/templates/review_queue.html`
+* `src/templates/payroll.html`
+* `src/templates/overview.html`
+* `src/templates/portfolio.html`
 
 ## Deliverables for this step
 
-1. compact decision metadata summary
-2. clearer visibility of rejection/reopen reasons where available
-3. preserved latest-decision summary
-4. preserved recent lifecycle list
-5. no regression to workflow or analytics semantics
+1. a modest set of high-value review/traceability polish improvements
+2. a modest set of high-value extraction follow-up improvements
+3. a modest set of command-center/readability polish improvements
+4. no regression to workflow semantics
+5. no regression to analytics semantics
+6. no regression to member-aware payroll model
 
 ## Constraints
 
 * keep changes incremental
 * no framework migration
 * no Tailwind rewrite
-* no full timeline/versioning system
+* no full version-history system
+* no fake confidence scoring
 * no unrelated global redesign
-* keep the system local-first and honest about history/state
+* keep the system local-first and honest about data quality/state
 
-## What comes next after Step 30
+## What comes next after Step 31
 
-After Step 30, next work should likely be chosen from:
-
-* additional extraction refinement
-* command-center polish based on real usage
-* further modest review-quality improvements
+After Step 31, reassess based on real usage and actual friction rather than committing to a large preset roadmap.

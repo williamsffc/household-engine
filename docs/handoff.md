@@ -42,10 +42,11 @@ Completed:
 * Step 27
 * Step 28
 * Step 29
+* Step 30
 
 Current active step:
 
-* Step 30 — Decision metadata summary polish
+* Step 31 — Review, Traceability, and Command-Center Polish
 
 ## Current status
 
@@ -68,6 +69,7 @@ Household Engine is now:
 * plus OCR / noisy-draft review hints
 * plus richer review artifact / audit surfacing
 * plus latest decision summary
+* plus compact decision metadata summary
 
 ## What is working now
 
@@ -125,6 +127,7 @@ Household Engine is now:
 * recent lifecycle history now exists in Review Queue and Payroll detail
 * review artifact metadata now surfaces in Review Queue detail
 * latest decision summary now appears in Review Queue and Payroll detail
+* compact decision metadata summary now appears in Review Queue and Payroll detail
 
 ### Payroll page
 
@@ -138,7 +141,7 @@ Household Engine is now:
 * Payroll detail shows rejection reason when present
 * Payroll detail supports reopening approved/rejected payroll back into review
 * Payroll detail shows recent lifecycle history and OCR/noisy-draft hints
-* Payroll detail now shows latest decision summary
+* Payroll detail shows latest decision summary and decision metadata summary
 
 ### Portfolio / planning
 
@@ -254,16 +257,13 @@ This means:
 
 ## What is not implemented yet
 
-### Traceability polish
+### Combined polish pass
 
-* no compact decision-metadata block yet beyond the latest decision summary
-* rejection/reopen reasons are not yet surfaced as clearly as they could be near the summary
-
-### Later refinement opportunities
-
-* additional extraction refinement may still be useful
-* more command-center polish may still be useful
-* further review-quality improvements may still be useful
+* there is still room for a modest combined polish pass across:
+  * review clarity
+  * traceability readability
+  * extraction rough edges
+  * command-center consistency
 
 ### Deferred advanced items
 
@@ -277,10 +277,10 @@ This means:
 
 Proceed with:
 
-* Step 30 — Decision metadata summary polish
+* Step 31 — Review, Traceability, and Command-Center Polish
 
 ## Important current truth
 
-The app now answers “what happened most recently?” quickly.
+The product has moved from major feature-building into refinement.
 
-The next best move is a small polish pass so the associated decision metadata — especially rejection/reopen reasons — is surfaced just as clearly.
+The next best move is a combined polish/stabilization pass that improves trust, readability, and day-to-day usability without opening a large new subsystem.

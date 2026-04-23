@@ -135,14 +135,41 @@ function latestDecisionSummary(auditEvents) {
 }
 
 function decisionMetadataSummary(latest, paystub) {
-  if (!latest) return { has: false, reason: null };
+  if (!latest) return { has: false, reason: null, decidedAt: null, decisionActor: null };
   const p = paystub || {};
+  const decidedAt = p.decided_at ? String(p.decided_at) : null;
+  const decisionActor = p.decision_actor ? String(p.decision_actor) : null;
   // Prefer explicit stored rejection_reason when paystub is currently rejected.
   const effective = effectiveStatusLabel(p);
   if (latest.label === "Rejected" && effective === "rejected" && p.rejection_reason) {
-    return { has: true, reason: String(p.rejection_reason) };
+    return { has: true, reason: String(p.rejection_reason), decidedAt, decisionActor };
   }
-  return { has: true, reason: latest.reason || null };
+  return { has: true, reason: latest.reason || null, decidedAt, decisionActor };
+}
+
+function prettyAuditAction(action) {
+  const a = String(action || "");
+  if (a === "payroll_ingest_started") return "Ingest started";
+  if (a === "payroll_text_extracted") return "Text extracted";
+  if (a === "payroll_pii_scrubbed") return "PII scrubbed";
+  if (a === "payroll_draft_stored") return "Draft stored";
+  if (a === "payroll_ingest_requested") return "Ingest requested";
+  if (a === "payroll_ingest_failed") return "Ingest failed";
+  if (a === "payroll_approved") return "Approved";
+  if (a === "payroll_rejected") return "Rejected";
+  if (a === "payroll_reopened") return "Reopened";
+  return a || "—";
+}
+
+function summarizeAuditDetails(details) {
+  const s = String(details || "").trim();
+  if (!s) return "";
+  let out = s.replace(/\bpaystub_id=\d+\b/gi, "").replace(/\bmember_id=\d+\b/gi, "");
+  out = out.replace(/\bfrom_document_status=[^,]+/gi, "").replace(/\bfrom_paystub_status=[^,]+/gi, "");
+  out = out.replace(/\s*,\s*/g, " · ").replace(/\s+/g, " ").trim();
+  out = out.replace(/^·\s*/g, "").replace(/\s*·\s*$/g, "");
+  if (out.length > 160) out = out.slice(0, 157) + "…";
+  return out;
 }
 
 async function loadMembers(selectEl) {
@@ -162,10 +189,10 @@ function renderAuditEvents(events) {
     ${rows
       .slice(0, 12)
       .map((e) => {
-        const action = escapeHtml(e.action || "—");
+        const action = escapeHtml(prettyAuditAction(e.action));
         const when = escapeHtml(e.created_at || "—");
         const actor = escapeHtml(e.actor || "—");
-        const details = escapeHtml(e.details || "");
+        const details = escapeHtml(summarizeAuditDetails(e.details || ""));
         return `
           <div class="row">
             <div class="row__left">
@@ -365,9 +392,15 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
         <div class="row" style="grid-template-columns: 1fr;">
           <div class="row__left">
             <div class="row__title">Decision metadata</div>
-            <div class="row__subtitle">${
-              meta.reason ? `reason: ${escapeHtml(meta.reason)}` : "No reason recorded for the latest decision."
-            }</div>
+            <div class="row__subtitle">
+              ${
+                meta.decidedAt || meta.decisionActor
+                  ? `${meta.decidedAt ? `decided_at ${escapeHtml(meta.decidedAt)}` : "decided_at —"} · ${
+                      meta.decisionActor ? `actor ${escapeHtml(meta.decisionActor)}` : "actor —"
+                    }<br/>`
+                  : ""
+              }${meta.reason ? `reason: ${escapeHtml(meta.reason)}` : "No reason recorded for the latest decision."}
+            </div>
           </div>
           <div class="pill pill--muted">meta</div>
         </div>

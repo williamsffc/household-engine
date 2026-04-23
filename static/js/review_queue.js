@@ -107,10 +107,10 @@ function renderAuditEvents(events) {
     ${rows
       .slice(0, 12)
       .map((e) => {
-        const action = escapeHtml(e.action || "—");
+        const action = escapeHtml(prettyAuditAction(e.action));
         const when = escapeHtml(e.created_at || "—");
         const actor = escapeHtml(e.actor || "—");
-        const details = escapeHtml(e.details || "");
+        const details = escapeHtml(summarizeAuditDetails(e.details || ""));
         return `
           <div class="row">
             <div class="row__left">
@@ -123,6 +123,31 @@ function renderAuditEvents(events) {
       })
       .join("")}
   </div>`;
+}
+
+function prettyAuditAction(action) {
+  const a = String(action || "");
+  if (a === "payroll_ingest_started") return "Ingest started";
+  if (a === "payroll_text_extracted") return "Text extracted";
+  if (a === "payroll_pii_scrubbed") return "PII scrubbed";
+  if (a === "payroll_draft_stored") return "Draft stored";
+  if (a === "payroll_ingest_requested") return "Ingest requested";
+  if (a === "payroll_ingest_failed") return "Ingest failed";
+  if (a === "payroll_approved") return "Approved";
+  if (a === "payroll_rejected") return "Rejected";
+  if (a === "payroll_reopened") return "Reopened";
+  return a || "—";
+}
+
+function summarizeAuditDetails(details) {
+  const s = String(details || "").trim();
+  if (!s) return "";
+  let out = s.replace(/\bpaystub_id=\d+\b/gi, "").replace(/\bmember_id=\d+\b/gi, "");
+  out = out.replace(/\bfrom_document_status=[^,]+/gi, "").replace(/\bfrom_paystub_status=[^,]+/gi, "");
+  out = out.replace(/\s*,\s*/g, " · ").replace(/\s+/g, " ").trim();
+  out = out.replace(/^·\s*/g, "").replace(/\s*·\s*$/g, "");
+  if (out.length > 160) out = out.slice(0, 157) + "…";
+  return out;
 }
 
 function extractReasonFromDetails(details) {
