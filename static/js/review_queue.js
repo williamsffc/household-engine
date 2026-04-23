@@ -87,7 +87,7 @@ function setBanner(kind, title, message) {
     el.innerHTML = "";
     return;
   }
-  const bannerClass = kind === "error" ? "banner--error" : "banner--warning";
+  const bannerClass = kind === "error" ? "banner--error" : kind === "success" ? "banner--success" : "banner--warning";
   el.innerHTML = `
     <div class="banner ${bannerClass}">
       <div class="banner__title">${escapeHtml(title || "Review Queue")}</div>
@@ -98,6 +98,12 @@ function setBanner(kind, title, message) {
 
 function clearBanner() {
   setBanner(null);
+}
+
+let _flashBanner = null;
+
+function flashBanner(kind, title, message) {
+  _flashBanner = { kind, title, message };
 }
 
 function skeletonRows(n) {
@@ -305,7 +311,12 @@ async function load() {
     const metaEl = document.getElementById("rq-meta");
     const detailMetaEl = document.getElementById("rq-detail-meta");
 
-    clearBanner();
+    if (_flashBanner) {
+      setBanner(_flashBanner.kind, _flashBanner.title, _flashBanner.message);
+      _flashBanner = null;
+    } else {
+      clearBanner();
+    }
     if (listEl) listEl.innerHTML = skeletonRows(4);
     if (detailEl) detailEl.innerHTML = skeletonRows(6);
     if (metaEl) metaEl.textContent = "Loading…";
@@ -450,6 +461,14 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
     }
 
     const artifactMeta = review.artifact_meta || {};
+    const artifactWarning = review.artifact_warning ? String(review.artifact_warning) : "";
+    const artifactWarningHtml = artifactWarning
+      ? `
+        <div class="callout callout--info">
+          <div class="callout__title">Review artifact note</div>
+          <div class="callout__body">${escapeHtml(artifactWarning)}</div>
+        </div>`
+      : "";
     const artifactMetaHtml = `
       <div class="row" style="grid-template-columns: 1fr;">
         <div class="row__left">
@@ -523,6 +542,8 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
       ${extractionCallout}
 
       ${lineDetailCallout}
+
+      ${artifactWarningHtml}
 
       ${artifactMetaHtml}
 
@@ -608,10 +629,11 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
         try {
           await postJson(`/api/review-queue/${documentId}/approve`, {});
           setParam("document_id", null);
+          flashBanner("success", "Approved", "Decision recorded. This item moved out of Review Queue.");
           await load();
         } catch (e) {
           if (Number(e?.status) === 409) {
-            setBanner("warning", "Already decided", "This item’s state changed (or was already decided). Refreshing to backend truth…");
+            flashBanner("warning", "Already decided", "This item’s state changed (or was already decided). Refreshing to backend truth…");
             setParam("document_id", null);
             await load();
           } else {
@@ -635,10 +657,11 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
         try {
           await postJson(`/api/review-queue/${documentId}/reject`, reason.trim() ? { reason: reason.trim() } : {});
           setParam("document_id", null);
+          flashBanner("success", "Rejected", "Decision recorded. This item moved out of Review Queue.");
           await load();
         } catch (e) {
           if (Number(e?.status) === 409) {
-            setBanner("warning", "Already decided", "This item’s state changed (or was already decided). Refreshing to backend truth…");
+            flashBanner("warning", "Already decided", "This item’s state changed (or was already decided). Refreshing to backend truth…");
             setParam("document_id", null);
             await load();
           } else {

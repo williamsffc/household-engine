@@ -1,10 +1,10 @@
-# Step 34 — Conflict-Aware UI Refresh for Review Actions
+# Step 35 — Review Workflow and Reliability Polish
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 33 and is now best described as:
+Household Engine is complete through Step 34 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -26,7 +26,8 @@ Household Engine is complete through Step 33 and is now best described as:
 * plus compact decision metadata summary
 * plus review/traceability readability polish
 * plus real-usage polish improvements
-* plus backend safety hardening for review actions
+* plus backend workflow safety hardening
+* plus conflict-aware UI refresh for review actions
 
 The app currently has:
 
@@ -53,9 +54,10 @@ The app currently has:
 * latest decision + decision metadata summaries
 * cleaner human-readable audit rows
 * keyboard accessibility and action-state polish
-* backend-side protection against duplicate/stale approve/reject/reopen requests
+* backend-side protection against duplicate/stale review actions
+* frontend-side calm handling for backend conflict responses
 
-## Step 14A–33 status
+## Step 14A–34 status
 
 Completed enough.
 
@@ -82,7 +84,8 @@ Delivered:
 * latest decision summary and compact decision metadata
 * human-readable audit rows and better traceability readability
 * keyboard accessibility and UI-side duplicate-action prevention
-* backend-side conditional-update hardening for approve/reject/reopen with 409 conflict responses on stale/no-op requests
+* backend-side conditional-update hardening for approve/reject/reopen
+* conflict-aware UI refresh behavior for stale/no-op review actions
 
 ## Product rule now locked in
 
@@ -93,72 +96,97 @@ That means:
 * household cashflow and planning remain the top-level view
 * payroll and documents still belong to specific household members
 * approved payroll remains the only payroll that affects analytics/planning
-* UI should stay calm and truthful when backend state has already changed
-* conflict handling should refresh toward backend truth, not guess
+* review workflows should feel calm, safe, and trustworthy
+* polish work should reduce friction without opening large new systems
 
-## Goal of Step 34
+## Goal of Step 35
 
-Make the Review Queue and Payroll UI handle backend `409 Conflict` responses gracefully for review actions.
+Do one combined polish/hardening pass across review workflow behavior, reliability, traceability readability, artifact freshness edge cases, and consistency of empty/partial-failure states.
 
 ## Product intent
 
-Step 33 made the backend safer.  
-This step should make the frontend feel safer too.
+This step combines a set of closely related improvements into one stabilization pass:
 
-When users hit a stale or duplicate action case, the UI should:
+1. review action UX tightening
+2. small backend/workflow reliability refinement
+3. audit/traceability readability cleanup
+4. review artifact robustness/freshness edge-case handling
+5. consistency polish for empty and partial-failure states
 
-* explain briefly what happened
-* refresh the relevant list/detail state
-* avoid leaving the user in a confusing or broken state
+The goal is to make the current app feel more trustworthy, less surprising, and more coherent in real use.
 
 ## Required outcome
 
-1. handle 409 responses from approve/reject/reopen cleanly
-2. show a calm, understandable message
-3. refresh list/detail state to match backend truth
-4. avoid duplicate/noisy error handling
-5. preserve current workflow semantics
-6. preserve current analytics semantics
+### Review action UX tightening
+
+1. improve approve/reject/reopen aftermath behavior
+2. make selection/refresh behavior feel intentional
+3. reduce “where did it go?” confusion after actions
+
+### Reliability refinement
+
+4. improve handling of duplicate/stale/no-op requests where practical
+5. keep backend truth primary
+6. avoid noisy audit writes or misleading state transitions
+
+### Audit / traceability readability
+
+7. improve readability of surfaced audit/history details
+8. improve reason formatting where useful
+9. keep traceability modest, not overwhelming
+
+### Review artifact robustness
+
+10. handle stale/missing/empty artifact situations more clearly
+11. make regeneration/fallback behavior more understandable
+12. avoid confusing blank or ambiguous artifact states
+
+### Consistency polish
+
+13. align empty-state and partial-failure patterns across key pages
+14. improve small wording/readability consistency where useful
+15. preserve the calm command-center feel
 
 ## Scope guidance
 
-This is a frontend conflict-handling step, not a workflow redesign.
+This is a combined refinement step, not a new feature track.
 
 That means:
 
-* improve how the UI responds to stale/no-op action attempts
-* keep the change small and explicit
-* reuse existing banners/status areas
-* do not redesign the pages
-* do not change backend semantics again
+* fix a modest set of high-value friction points
+* prefer shared fixes over scattered hacks
+* keep the scope practical
+* do not build a full versioning/audit console
+* do not redesign the app
+* do not open unrelated systems
 
 ## Suggested focus areas
 
-### Review Queue actions
+### Review Queue / Payroll detail
 
-For approve/reject:
-* detect 409
-* show message like:
-  * already decided
-  * state changed
-  * refreshing…
-* refresh selected item / list state
+* post-action refresh behavior
+* selection stability
+* calm stale/conflict messaging
+* reason/history readability
 
-### Payroll reopen action
+### Review artifacts
 
-For reopen:
-* detect 409
-* show message like:
-  * already reopened or state changed
-* refresh detail and/or navigate appropriately
+* clearer handling when artifact metadata exists but content is limited
+* clearer handling when regeneration is needed or content is unavailable
+* modest truthfulness improvements, not a full artifact browser
 
-### UX tone
+### Empty / partial-failure consistency
 
-Keep messages:
-* brief
-* calm
-* truthful
-* not alarming
+Across:
+* Review Queue
+* Payroll
+* Overview
+* Portfolio
+
+Aim for:
+* clearer empty states
+* more aligned “limited / unavailable / failed” wording
+* consistent user expectations
 
 ## Files likely involved
 
@@ -166,33 +194,42 @@ Review first:
 
 * `static/js/review_queue.js`
 * `static/js/payroll.js`
+* `static/js/overview.js`
+* `static/js/portfolio.js`
+* `static/css/app.css`
 
 Potentially inspect:
-* current action fetch/error handling
-* current banner/status rendering patterns
-* endpoints in `src/api/routes_review.py` only to confirm 409 response shape if needed
+* `src/api/routes_review.py`
+* `src/api/routes_payroll.py`
+* `src/services/review_queue.py`
+* `src/payroll/review_artifacts.py`
+* relevant templates:
+  * `src/templates/review_queue.html`
+  * `src/templates/payroll.html`
+  * `src/templates/overview.html`
+  * `src/templates/portfolio.html`
 
 ## Deliverables for this step
 
-1. conflict-aware UI handling for approve/reject/reopen
-2. calm user-visible messaging
-3. automatic refresh to backend truth where appropriate
-4. no regression to workflow semantics
-5. no regression to analytics semantics
+1. a modest set of high-value review workflow polish improvements
+2. a modest set of reliability/state-handling improvements
+3. a modest set of traceability readability improvements
+4. a modest set of artifact robustness/empty-state improvements
+5. better consistency across current pages
+6. no regression to workflow semantics
+7. no regression to analytics semantics
+8. no regression to member-aware payroll model
 
 ## Constraints
 
 * keep changes incremental
 * no framework migration
 * no Tailwind rewrite
-* no workflow redesign
+* no full version-history system
+* no fake confidence scoring
 * no unrelated global redesign
-* keep the system local-first and honest about workflow state
+* keep the system local-first and honest about state and data quality
 
-## What comes next after Step 34
+## What comes next after Step 35
 
-After Step 34, reassess based on real usage again, likely choosing between:
-
-* more command-center polish
-* more extraction refinement
-* small workflow readability improvements
+After Step 35, reassess based on actual use and remaining friction rather than committing to another large preset roadmap.

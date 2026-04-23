@@ -467,6 +467,17 @@ body {
   color: var(--color-text);
 }
 
+.banner--success {
+  border-color: rgba(34, 197, 94, 0.25);
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--color-text);
+}
+
+html[data-theme="dark"] .banner--success {
+  border-color: rgba(34, 197, 94, 0.28);
+  background: rgba(34, 197, 94, 0.14);
+}
+
 .banner__title {
   font-weight: 650;
   margin-bottom: 2px;

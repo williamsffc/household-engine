@@ -122,8 +122,10 @@ def get_review_payload(document_id: int) -> dict[str, Any]:
         lines = list_lines_for_paystub(conn, int(paystub["id"]))
 
         artifact = get_review_artifact_for_document(conn, int(document_id))
-        if artifact is None:
-            # Build once, then persist for future views.
+        artifact_warning: str | None = None
+
+        def _regenerate_and_persist(*, reason: str) -> None:
+            nonlocal artifact, artifact_warning
             regenerated = _extract_and_scrub_redacted_text(storage_path=str(doc_dict["storage_path"]))
             upsert_review_artifact(
                 conn,
@@ -136,13 +138,28 @@ def get_review_payload(document_id: int) -> dict[str, Any]:
                 source="persisted_from_regeneration",
             )
             artifact = get_review_artifact_for_document(conn, int(document_id))
+            artifact_warning = reason
+
+        try:
             if artifact is None:
-                # Fallback (should not happen): remain honest and use regenerated payload.
-                artifact = {
-                    "redacted_text": regenerated.get("redacted_text") or "",
-                    "redaction_counts": regenerated.get("redaction_counts") or {},
-                    "source": "regenerated_on_read",
-                }
+                _regenerate_and_persist(reason="Review artifact was missing; regenerated from the stored file.")
+            else:
+                # Freshness: if the persisted artifact points at an older paystub id, regenerate.
+                art_pid = artifact.get("paystub_id")
+                if art_pid is not None and int(art_pid) != int(paystub["id"]):
+                    _regenerate_and_persist(reason="Review artifact was stale; regenerated to match the latest draft paystub.")
+                # Robustness: if artifact exists but is empty, attempt one regeneration.
+                elif not str(artifact.get("redacted_text") or "").strip():
+                    _regenerate_and_persist(reason="Review artifact text was empty; regenerated from the stored file.")
+        except HTTPException as e:
+            # Keep payload usable even if regeneration fails (remain honest and surface a note).
+            artifact_warning = f"Could not regenerate review artifact text ({e.detail})."
+        except Exception as e:
+            artifact_warning = f"Could not regenerate review artifact text ({str(e)})."
+
+        if artifact is None:
+            # Honest fallback: avoid crashing the whole payload.
+            artifact = {"redacted_text": "", "redaction_counts": {}, "source": "unavailable"}
 
         audit_events = _list_audit_events_for_document(conn, document_id=int(document_id), limit=20)
 
@@ -175,7 +192,9 @@ def get_review_payload(document_id: int) -> dict[str, Any]:
             "redacted_text": artifact.get("redacted_text") or "",
             "redaction_counts": artifact.get("redaction_counts") or {},
             "redacted_text_source": artifact.get("source") or "persisted",
+            "artifact_warning": artifact_warning,
             "artifact_meta": {
+                "paystub_id": artifact.get("paystub_id"),
                 "text_chars": artifact.get("text_chars"),
                 "ocr_used_for_review": artifact.get("ocr_used_for_review"),
                 "source": artifact.get("source"),

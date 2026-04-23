@@ -66,7 +66,7 @@ function setBanner(kind, title, message) {
     el.innerHTML = "";
     return;
   }
-  const bannerClass = kind === "error" ? "banner--error" : "banner--warning";
+  const bannerClass = kind === "error" ? "banner--error" : kind === "success" ? "banner--success" : "banner--warning";
   el.innerHTML = `
     <div class="banner ${bannerClass}">
       <div class="banner__title">${escapeHtml(title || "Payroll")}</div>
@@ -77,6 +77,12 @@ function setBanner(kind, title, message) {
 
 function clearBanner() {
   setBanner(null);
+}
+
+let _flashBanner = null;
+
+function flashBanner(kind, title, message) {
+  _flashBanner = { kind, title, message };
 }
 
 function skeletonRows(n) {
@@ -241,7 +247,12 @@ async function load() {
   const memberSel = document.getElementById("payroll-member");
   const statusSel = document.getElementById("payroll-status-filter");
 
-  clearBanner();
+  if (_flashBanner) {
+    setBanner(_flashBanner.kind, _flashBanner.title, _flashBanner.message);
+    _flashBanner = null;
+  } else {
+    clearBanner();
+  }
   if (listEl) listEl.innerHTML = skeletonRows(4);
   if (detailEl) detailEl.innerHTML = skeletonRows(6);
   if (metaEl) metaEl.textContent = "Loading…";
@@ -555,10 +566,11 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
           await postJson(`/api/review-queue/${encodeURIComponent(String(p.document_id))}/reopen`, {
             reason: reason.trim() ? reason.trim() : null,
           });
+          flashBanner("success", "Reopened", "Reopened into Review Queue. It is excluded from approved-only analytics until re-approved.");
           window.location.href = `/review-queue?document_id=${encodeURIComponent(String(p.document_id))}`;
         } catch (err) {
           if (Number(err?.status) === 409) {
-            setBanner(
+            flashBanner(
               "warning",
               "Already changed",
               "This paystub’s state changed (or was already reopened). Refreshing to backend truth…"

@@ -46,10 +46,11 @@ Completed:
 * Step 31
 * Step 32
 * Step 33
+* Step 34
 
 Current active step:
 
-* Step 34 — Conflict-Aware UI Refresh for Review Actions
+* Step 35 — Review Workflow and Reliability Polish
 
 ## Current status
 
@@ -76,6 +77,7 @@ Household Engine is now:
 * plus review/traceability readability polish
 * plus real-usage polish improvements
 * plus backend workflow safety hardening
+* plus conflict-aware UI refresh for review actions
 
 ## What is working now
 
@@ -136,11 +138,12 @@ Household Engine is now:
 * compact decision metadata summary now appears in Review Queue and Payroll detail
 * audit rows now use human-readable labels and cleaner summarized details
 * decision metadata row now also shows decided_at / decision_actor when present
-* backend approve/reject/reopen actions are now hardened:
+* backend approve/reject/reopen actions are hardened:
   * conditional updates only
   * SQLite transaction protection
   * stale/no-op requests return 409 Conflict
   * duplicate/no-op audit writes are avoided
+* frontend now handles 409 conflicts calmly for review actions and refreshes toward backend truth
 
 ### Payroll page
 
@@ -154,6 +157,7 @@ Household Engine is now:
 * Payroll detail shows rejection reason when present
 * Payroll detail supports reopening approved/rejected payroll back into review
 * Payroll detail shows recent lifecycle history, OCR/noisy-draft hints, latest decision summary, and decision metadata summary
+* Payroll detail participates in conflict-aware refresh behavior for reopen conflicts
 
 ### Portfolio / planning
 
@@ -278,10 +282,14 @@ This means:
 
 ## What is not implemented yet
 
-### Frontend conflict handling
+### Combined polish/hardening pass
 
-* frontend does not yet gracefully interpret backend 409 Conflict responses for approve/reject/reopen
-* stale/no-op action attempts could still surface as generic errors rather than calm refresh-to-truth behavior
+* there is still room for a modest combined polish pass across:
+  * review action aftermath behavior
+  * traceability readability
+  * artifact robustness/freshness edge cases
+  * empty/partial-failure state consistency
+  * small command-center consistency improvements
 
 ### Deferred advanced items
 
@@ -295,10 +303,10 @@ This means:
 
 Proceed with:
 
-* Step 34 — Conflict-Aware UI Refresh for Review Actions
+* Step 35 — Review Workflow and Reliability Polish
 
 ## Important current truth
 
-The backend review actions are now safer.
+The app is now both feature-complete and fairly robust.
 
-The next best move is to make the frontend respond calmly to 409 conflict/no-op situations by refreshing toward backend truth instead of treating them like generic errors.
+The next best move is one combined polish/hardening pass that improves trust, readability, consistency, and state-handling without opening another major subsystem.
