@@ -44,10 +44,12 @@ Completed:
 * Step 29
 * Step 30
 * Step 31
+* Step 32
+* Step 33
 
 Current active step:
 
-* Step 32 — Real-Usage Polish Pass
+* Step 34 — Conflict-Aware UI Refresh for Review Actions
 
 ## Current status
 
@@ -72,6 +74,8 @@ Household Engine is now:
 * plus latest decision summary
 * plus compact decision metadata summary
 * plus review/traceability readability polish
+* plus real-usage polish improvements
+* plus backend workflow safety hardening
 
 ## What is working now
 
@@ -132,6 +136,11 @@ Household Engine is now:
 * compact decision metadata summary now appears in Review Queue and Payroll detail
 * audit rows now use human-readable labels and cleaner summarized details
 * decision metadata row now also shows decided_at / decision_actor when present
+* backend approve/reject/reopen actions are now hardened:
+  * conditional updates only
+  * SQLite transaction protection
+  * stale/no-op requests return 409 Conflict
+  * duplicate/no-op audit writes are avoided
 
 ### Payroll page
 
@@ -161,6 +170,7 @@ Household Engine is now:
 * Reset to defaults exists
 * current assumptions summary exists
 * current control values are reflected in the URL query string
+* UI-side duplicate-submit prevention exists for recompute/apply
 * approved-only payroll semantics remain unchanged
 
 ### Shared analytics / overview
@@ -199,6 +209,14 @@ Household Engine is now:
 * drag-and-drop + click-to-upload supported
 * upload states include idle, drag-over, uploading, success, and error
 * current upload integration uses existing `POST /api/documents/upload`
+
+### Real-usage polish from Step 32
+
+* Review Queue and Payroll rows are keyboard-activatable
+* clearer hover/focus styling on clickable rows
+* Review Queue no longer risks a null crash for `rq-detail-meta`
+* Approve/Reject/Reopen/Apply buttons now disable and show working state during requests
+* duplicate-submit prevention improved on the UI side
 
 ## Current implemented routes
 
@@ -260,13 +278,10 @@ This means:
 
 ## What is not implemented yet
 
-### Real-usage polish backlog
+### Frontend conflict handling
 
-* there is still room for a modest real-usage polish pass across:
-  * review clarity
-  * command-center consistency
-  * small extraction rough edges
-  * wording/readability consistency
+* frontend does not yet gracefully interpret backend 409 Conflict responses for approve/reject/reopen
+* stale/no-op action attempts could still surface as generic errors rather than calm refresh-to-truth behavior
 
 ### Deferred advanced items
 
@@ -280,10 +295,10 @@ This means:
 
 Proceed with:
 
-* Step 32 — Real-Usage Polish Pass
+* Step 34 — Conflict-Aware UI Refresh for Review Actions
 
 ## Important current truth
 
-The app is feature-complete enough for its intended local-first household workflow.
+The backend review actions are now safer.
 
-The next best move is not a big new feature, but a grounded polish pass based on actual friction and real usage.
+The next best move is to make the frontend respond calmly to 409 conflict/no-op situations by refreshing toward backend truth instead of treating them like generic errors.

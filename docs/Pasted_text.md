@@ -1,10 +1,10 @@
-# Step 32 — Real-Usage Polish Pass
+# Step 34 — Conflict-Aware UI Refresh for Review Actions
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 31 and is now best described as:
+Household Engine is complete through Step 33 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -25,6 +25,8 @@ Household Engine is complete through Step 31 and is now best described as:
 * plus latest decision summary
 * plus compact decision metadata summary
 * plus review/traceability readability polish
+* plus real-usage polish improvements
+* plus backend safety hardening for review actions
 
 The app currently has:
 
@@ -50,8 +52,10 @@ The app currently has:
 * recent lifecycle history + artifact metadata in Review Queue and Payroll detail
 * latest decision + decision metadata summaries
 * cleaner human-readable audit rows
+* keyboard accessibility and action-state polish
+* backend-side protection against duplicate/stale approve/reject/reopen requests
 
-## Step 14A–31 status
+## Step 14A–33 status
 
 Completed enough.
 
@@ -77,6 +81,8 @@ Delivered:
 * recent lifecycle and review artifact metadata surfacing in Review Queue / Payroll detail
 * latest decision summary and compact decision metadata
 * human-readable audit rows and better traceability readability
+* keyboard accessibility and UI-side duplicate-action prevention
+* backend-side conditional-update hardening for approve/reject/reopen with 409 conflict responses on stale/no-op requests
 
 ## Product rule now locked in
 
@@ -87,97 +93,106 @@ That means:
 * household cashflow and planning remain the top-level view
 * payroll and documents still belong to specific household members
 * approved payroll remains the only payroll that affects analytics/planning
-* the product should now be refined based on real usage, not abstract roadmap expansion
-* polish should stay honest, modest, and high-value
+* UI should stay calm and truthful when backend state has already changed
+* conflict handling should refresh toward backend truth, not guess
 
-## Goal of Step 32
+## Goal of Step 34
 
-Do a real-usage-driven polish pass across the current app, fixing the highest-value remaining rough edges without opening a new subsystem.
+Make the Review Queue and Payroll UI handle backend `409 Conflict` responses gracefully for review actions.
 
 ## Product intent
 
-The major workflows now exist.
+Step 33 made the backend safer.  
+This step should make the frontend feel safer too.
 
-This step should focus on:
+When users hit a stale or duplicate action case, the UI should:
 
-* small but recurring friction
-* readability annoyances
-* modest consistency gaps
-* calm UX cleanup based on how the app actually feels in use
-
-This is a stabilization step, not a feature expansion step.
+* explain briefly what happened
+* refresh the relevant list/detail state
+* avoid leaving the user in a confusing or broken state
 
 ## Required outcome
 
-1. identify the highest-value small rough edges in the current app
-2. fix a modest set of them cleanly
-3. improve consistency/readability/usability across key pages
-4. preserve current workflow semantics
-5. preserve current analytics semantics
-6. avoid introducing large new scope
+1. handle 409 responses from approve/reject/reopen cleanly
+2. show a calm, understandable message
+3. refresh list/detail state to match backend truth
+4. avoid duplicate/noisy error handling
+5. preserve current workflow semantics
+6. preserve current analytics semantics
 
 ## Scope guidance
 
-This is a polish/stabilization step.
+This is a frontend conflict-handling step, not a workflow redesign.
 
 That means:
 
-* fix a few concrete issues that noticeably improve everyday use
-* prefer shared fixes over one-off hacks where possible
-* keep changes incremental
-* do not open a large new feature track
-* do not redesign the app
-* do not invent new scoring/analytics systems
+* improve how the UI responds to stale/no-op action attempts
+* keep the change small and explicit
+* reuse existing banners/status areas
+* do not redesign the pages
+* do not change backend semantics again
 
 ## Suggested focus areas
 
-Potential candidates:
+### Review Queue actions
 
-* small Review Queue readability or aftermath-state polish
-* small Payroll detail readability polish
-* small Overview/Portfolio consistency cleanup
-* spacing/stacking consistency
-* wording clarity
-* modest extraction warning presentation cleanup
-* small cache-bust/static freshness cleanup where still needed
+For approve/reject:
+* detect 409
+* show message like:
+  * already decided
+  * state changed
+  * refreshing…
+* refresh selected item / list state
+
+### Payroll reopen action
+
+For reopen:
+* detect 409
+* show message like:
+  * already reopened or state changed
+* refresh detail and/or navigate appropriately
+
+### UX tone
+
+Keep messages:
+* brief
+* calm
+* truthful
+* not alarming
 
 ## Files likely involved
 
-Review first based on the actual rough edges found, but likely:
+Review first:
 
-* `static/css/app.css`
 * `static/js/review_queue.js`
 * `static/js/payroll.js`
-* `static/js/overview.js`
-* `static/js/portfolio.js`
-* relevant templates:
-  * `src/templates/review_queue.html`
-  * `src/templates/payroll.html`
-  * `src/templates/overview.html`
-  * `src/templates/portfolio.html`
 
 Potentially inspect:
-* `src/api/routes_review.py`
-* `src/api/routes_payroll.py`
+* current action fetch/error handling
+* current banner/status rendering patterns
+* endpoints in `src/api/routes_review.py` only to confirm 409 response shape if needed
 
 ## Deliverables for this step
 
-1. a small set of real-usage-driven UX/readability fixes
-2. better consistency across key pages where useful
-3. no regression to workflow semantics
-4. no regression to analytics semantics
-5. no large new subsystem or redesign
+1. conflict-aware UI handling for approve/reject/reopen
+2. calm user-visible messaging
+3. automatic refresh to backend truth where appropriate
+4. no regression to workflow semantics
+5. no regression to analytics semantics
 
 ## Constraints
 
 * keep changes incremental
 * no framework migration
 * no Tailwind rewrite
-* no full history/versioning system
-* no fake confidence scoring
+* no workflow redesign
 * no unrelated global redesign
-* keep the system local-first and honest about data quality/state
+* keep the system local-first and honest about workflow state
 
-## What comes next after Step 32
+## What comes next after Step 34
 
-After Step 32, reassess based on actual use and remaining friction rather than committing to a large preset roadmap.
+After Step 34, reassess based on real usage again, likely choosing between:
+
+* more command-center polish
+* more extraction refinement
+* small workflow readability improvements

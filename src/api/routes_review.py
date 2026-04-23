@@ -197,7 +197,7 @@ def approve_review_item(document_id: int) -> dict[str, Any]:
         try:
             return approve_payroll_review_item(conn, document_id=int(document_id), actor="user")
         except ReviewQueueError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
+            raise HTTPException(status_code=getattr(e, "status_code", 400), detail=str(e)) from e
 
 
 @router.post("/{document_id}/reject")
@@ -211,7 +211,7 @@ def reject_review_item(document_id: int, body: RejectRequest) -> dict[str, Any]:
                 reason=(body.reason if body else None),
             )
         except ReviewQueueError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
+            raise HTTPException(status_code=getattr(e, "status_code", 400), detail=str(e)) from e
 
 
 @router.post("/{document_id}/reopen")
@@ -225,4 +225,4 @@ def reopen_review_item(document_id: int, body: ReopenRequest) -> dict[str, Any]:
                 reason=(body.reason if body else None),
             )
         except ReviewQueueError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
+            raise HTTPException(status_code=getattr(e, "status_code", 400), detail=str(e)) from e
