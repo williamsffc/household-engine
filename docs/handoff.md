@@ -38,10 +38,11 @@ Completed:
 * Step 23
 * Step 24
 * Step 25
+* Step 26
 
 Current active step:
 
-* Step 26 — Targeted payroll extraction follow-ups
+* Step 27 — OCR / noisy-draft review hints
 
 ## Current status
 
@@ -61,6 +62,7 @@ Household Engine is now:
 * plus improved native-text payroll extraction quality
 * plus scanned-PDF OCR fallback support
 * plus controlled reopen / undo workflow for payroll decisions
+* plus targeted payroll extraction follow-ups
 
 ## What is working now
 
@@ -128,6 +130,11 @@ Household Engine is now:
   * OCR fallback runs only when native text is empty/insufficient
   * OCR text flows into the same scrub + extraction + review path
   * OCR use is surfaced honestly via ocr_used / extraction_source metadata
+* targeted extraction follow-ups now exist:
+  * improved OCR-friendly label cleanup
+  * improved common tax/deduction/earning classification
+  * stronger summary-row filtering
+  * pretax no longer misclassifies as tax
 
 ### Payroll page
 
@@ -143,7 +150,7 @@ Household Engine is now:
 * household-vs-per-person payroll browsing exists
 * payroll status presentation is clearer across approved / rejected / in_review
 * Payroll detail shows rejection reason when present
-* Payroll detail now supports reopening approved/rejected payroll back into review
+* Payroll detail supports reopening approved/rejected payroll back into review
 
 ### Portfolio / planning
 
@@ -195,6 +202,9 @@ Household Engine is now:
 * navigation is now persistent
 * main content region is now the primary scrollable area
 * mobile drawer behavior remains in place with main scroll locking while open
+* shared spacing bugfix applied:
+  * `.grid--one` now has consistent bottom spacing
+  * `app.css` cache-busted to current version
 
 ### Shared upload interaction layer
 
@@ -268,15 +278,16 @@ This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
-### Payroll quality / next refinements
+### Review-side trust hints
 
-* targeted extraction follow-up work is still valuable, especially on OCR-backed or reopened drafts
-* line classification and label cleanup can still improve further
+* no small OCR/noisy-draft hinting yet in Review Queue / Payroll detail
+* review UI does not yet explicitly warn when OCR-backed drafts also have suspiciously sparse line detail
 
 ### Later refinement opportunities
 
 * richer review artifact expansion may still be useful
-* additional command-center polish may still be useful
+* additional extraction refinement may still be useful
+* more command-center polish may still be useful
 
 ### Deferred advanced items
 
@@ -290,13 +301,10 @@ This is the intended model for Person-M and Person-W going forward.
 
 Proceed with:
 
-* Step 26 — Targeted payroll extraction follow-ups
+* Step 27 — OCR / noisy-draft review hints
 
 ## Important current truth
 
-The payroll workflow is now both stronger and more forgiving:
-- better native extraction
-- OCR fallback
-- reopen/undo support
+The payroll workflow is now much stronger and more forgiving.
 
-The next best move is to sharpen extraction weak spots that still show up in reopened or OCR-backed drafts, without turning the system into a heavy parser platform.
+The next best move is not a big workflow change, but a small review-side clarity improvement: honest hints for OCR-backed or suspiciously sparse drafts so reviewers can calibrate trust without relying on fake scoring.

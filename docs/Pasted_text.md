@@ -1,10 +1,10 @@
-# Step 26 — Targeted Payroll Extraction Follow-Ups
+# Step 27 — OCR / Noisy-Draft Review Hints
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 25 and is now best described as:
+Household Engine is complete through Step 26 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -20,6 +20,7 @@ Household Engine is complete through Step 25 and is now best described as:
 * plus improved native-text payroll extraction quality
 * plus scanned-PDF OCR fallback support
 * plus controlled reopen / undo workflow for payroll decisions
+* plus targeted payroll extraction follow-ups
 
 The app currently has:
 
@@ -43,7 +44,7 @@ The app currently has:
 * OCR fallback for scanned/image-like paystubs
 * reopen workflow for mistaken payroll decisions
 
-## Step 14A–25 status
+## Step 14A–26 status
 
 Completed enough.
 
@@ -64,6 +65,7 @@ Delivered:
 * improved native-text payroll extraction and payroll line usefulness
 * scanned-PDF OCR fallback integrated into payroll ingest and review regeneration
 * controlled reopen path for approved/rejected payroll items
+* targeted OCR-friendly extraction cleanup and line classification improvements
 
 ## Product rule now locked in
 
@@ -74,133 +76,120 @@ That means:
 * household cashflow and planning remain the top-level view
 * payroll and documents still belong to specific household members
 * approved payroll remains the only payroll that affects analytics/planning
-* extraction improvements must preserve review honesty and member ownership
-* reopened/OCR-backed drafts are opportunities to improve quality, not hide uncertainty
+* review UI should stay honest about noisy or limited extraction
+* hints should remain descriptive, not fake confidence scoring
 
-## Goal of Step 26
+## Goal of Step 27
 
-Make targeted, practical payroll extraction improvements based on the current weak spots that still show up in native-text and OCR-backed drafts.
+Add small, honest review-side hints for OCR-backed or suspiciously sparse/noisy payroll drafts so users can calibrate trust during review.
 
-This step should be selective and high-value, not a broad parser rewrite.
+This should improve review clarity without changing the review model or introducing scoring.
 
 ## Product intent
 
 Now that the system supports:
 
-* better native extraction
+* better native-text extraction
 * OCR fallback
 * reopen / re-review
+* targeted extraction cleanup
 
-the next best move is to tighten the most common extraction rough edges, especially around:
+the next practical improvement is to make noisy drafts easier to recognize at review time.
 
-* line classification
-* noisy OCR text patterns
-* awkward label normalization
-* partial draft usefulness
+The goal is not to predict correctness.  
+The goal is to say, in a simple and honest way:
 
-The goal is better drafts, not fake certainty.
+* this draft used OCR
+* this draft may be sparse/noisy
+* verify totals/lines carefully
 
 ## Required outcome
 
-Improve payroll extraction in a modest, targeted way with focus on:
+Add modest review hints with focus on:
 
-1. better line classification for common payroll row types
-2. better cleanup/normalization of noisy extracted labels
-3. practical improvements for OCR-backed drafts where low-risk
-4. fewer obviously wrong or junk rows
-5. no regression to review honesty
-6. no regression to approval/canonical workflow
-7. no regression to member-aware payroll semantics
+1. OCR-backed draft visibility
+2. simple descriptive warnings when extracted line detail looks unusually sparse or noisy
+3. no fake confidence scores
+4. no regression to review honesty
+5. no regression to approval/canonical workflow
+6. no regression to member-aware payroll model
 
 ## Scope guidance
 
-This is a targeted extraction refinement step, not a parser-platform rewrite.
+This is a review-surface hinting step, not a scoring system.
 
 That means:
 
-* improve weak spots that are already visible in current drafts
-* prefer common-case wins over broad complexity
-* keep heuristics understandable
-* keep warnings/review semantics honest
-* do not start unrelated UI redesign
-* do not introduce fake confidence scoring
-* do not change approved-only analytics semantics
+* use simple thresholds or descriptive signals
+* keep the messaging narrow and honest
+* surface the hint in Review Queue and/or Payroll detail if useful
+* do not invent confidence percentages
+* do not redesign the whole review UI
+* do not change approval semantics
+* do not change analytics rules
 
 ## Suggested focus areas
 
-### Line classification refinement
+### OCR-backed hinting
 
-Improve category assignment for rows such as:
+If extraction_source indicates OCR, surface a clear note such as:
 
-* taxes
-* deductions
-* regular earnings
-* reimbursements / adjustments
-* employer-specific wording that is currently miscategorized too often
+* OCR draft — verify fields carefully
 
-### Label normalization
+### Sparse/noisy line hints
 
-Reduce noise from OCR/native extraction such as:
+If the extracted line count is unusually low or otherwise suggests limited detail, surface a small note such as:
 
-* duplicated punctuation
-* broken spacing
-* common OCR artifacts
-* common payroll abbreviations that can be normalized safely
+* line detail is limited
+* totals may require closer review
 
-### OCR-friendly cleanup
+### Placement
 
-Add modest improvements that help OCR-backed text without pretending OCR is perfect, for example:
+Best likely surfaces:
 
-* filtering obvious OCR junk rows
-* handling common OCR substitutions where low-risk
-* improving matching on noisy but recoverable labels
+* Review Queue selected-item detail
+* Payroll detail view, where useful
 
-### Review honesty
-
-Keep the draft review model intact:
-* better extraction where possible
-* still clear when rows/fields remain uncertain or missing
+Keep the hints subtle but visible.
 
 ## Files likely involved
 
 Review first:
 
-* `src/payroll/ingest.py`
-* `src/payroll/normalizer.py`
-* `src/payroll/validator.py`
+* `src/api/routes_review.py`
+* `src/api/routes_payroll.py`
+* `static/js/review_queue.js`
+* `static/js/payroll.js`
+* `static/css/app.css`
 
 Potentially inspect:
 
-* OCR-related text flow in:
-  * `src/payroll/payroll_text_extract.py`
-  * `src/payroll/extractor_ocr.py`
-* current review/payload rendering in:
-  * `static/js/review_queue.js`
-  * `static/js/payroll.js`
+* current validation_summary / extraction_source usage
+* current review payload structure
+* current payroll detail payload structure
 
 ## Deliverables for this step
 
-1. targeted payroll extraction refinements
-2. better line classification and/or label cleanup
-3. modest OCR-friendly cleanup where practical
-4. no regression to review honesty
-5. no regression to approval/canonical workflow
-6. no regression to member-aware payroll model
+1. honest OCR/noisy-draft review hints
+2. simple threshold-based sparse-detail hinting if practical
+3. no fake scoring/confidence
+4. no regression to review workflow
+5. no regression to analytics semantics
+6. no regression to current UI foundations
 
 ## Constraints
 
 * keep changes incremental
 * no framework migration
 * no Tailwind rewrite
-* no full parser rewrite
 * no fake confidence scoring
 * no unrelated global redesign
 * keep the system local-first and honest about data quality/state
 
-## What comes next after Step 26
+## What comes next after Step 27
 
-After Step 26, the next work should be chosen based on the highest practical value, likely from:
+After Step 27, next work should likely be chosen from:
 
-* richer review artifact expansion
-* additional payroll-quality refinement
+* richer review artifact / audit surfacing
+* additional payroll extraction refinement
 * command-center polish based on real usage

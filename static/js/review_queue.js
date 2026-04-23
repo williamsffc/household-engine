@@ -325,6 +325,27 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
         </div>`;
     }
 
+    let lineDetailCallout = "";
+    if (lines.length === 0) {
+      lineDetailCallout = `
+        <div class="callout callout--info">
+          <div class="callout__title">No line detail extracted</div>
+          <div class="callout__body">This draft has no stored line items yet. Review may rely more on paystub fields and the original document text.</div>
+        </div>`;
+    } else if (lines.length < 3) {
+      lineDetailCallout = `
+        <div class="callout callout--info">
+          <div class="callout__title">Line detail is limited</div>
+          <div class="callout__body">Only ${escapeHtml(String(lines.length))} line item(s) were extracted. Totals may require closer review.</div>
+        </div>`;
+    } else if (lines.length >= 40) {
+      lineDetailCallout = `
+        <div class="callout callout--info">
+          <div class="callout__title">Line detail may be noisy</div>
+          <div class="callout__body">${escapeHtml(String(lines.length))} lines were extracted. Large tables sometimes include extra rows; skim for obvious junk before deciding.</div>
+        </div>`;
+    }
+
     detailEl.innerHTML = `
       <div class="row">
         <div class="row__left">
@@ -335,6 +356,8 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
       </div>
 
       ${extractionCallout}
+
+      ${lineDetailCallout}
 
       ${
         canDecide

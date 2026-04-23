@@ -97,6 +97,19 @@ function pillClass(status) {
   return "pill--review";
 }
 
+function parseValidationSummary(raw) {
+  if (!raw) return { warnings: [], extraction_source: null };
+  try {
+    const parsed = JSON.parse(String(raw));
+    const warnings = Array.isArray(parsed?.warnings) ? parsed.warnings.map((w) => String(w)) : [];
+    const extraction_source =
+      typeof parsed?.extraction_source === "string" && parsed.extraction_source.trim() ? parsed.extraction_source.trim() : null;
+    return { warnings, extraction_source };
+  } catch {
+    return { warnings: [], extraction_source: null };
+  }
+}
+
 async function loadMembers(selectEl) {
   const members = await fetchJson("/api/household/members");
   const options = [
@@ -212,10 +225,53 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
     const payload = await fetchJson(`/api/payroll/paystubs/${paystubId}`);
     const p = payload.paystub || {};
     const lines = Array.isArray(payload.lines) ? payload.lines : [];
+    const vs = parseValidationSummary(p.validation_summary);
 
     const effective = effectiveStatusLabel(p);
     const member = escapeHtml(p.member_display_name || `member_id=${p.member_id}`);
     const canReopen = effective === "approved" || effective === "rejected";
+
+    let extractionHint = "";
+    if (vs.extraction_source === "pdf_ocr_fallback") {
+      extractionHint = `
+        <div class="callout callout--info">
+          <div class="callout__title">Draft text source</div>
+          <div class="callout__body">PDF OCR fallback — selectable text was missing or insufficient. Verify fields carefully against the original.</div>
+        </div>`;
+    } else if (vs.extraction_source === "image_ocr") {
+      extractionHint = `
+        <div class="callout callout--info">
+          <div class="callout__title">Draft text source</div>
+          <div class="callout__body">Image OCR — verify fields carefully.</div>
+        </div>`;
+    } else if (vs.extraction_source === "native_pdf") {
+      extractionHint = `
+        <div class="callout callout--info">
+          <div class="callout__title">Draft text source</div>
+          <div class="callout__body">Native PDF text extraction.</div>
+        </div>`;
+    }
+
+    let lineHint = "";
+    if (lines.length === 0) {
+      lineHint = `
+        <div class="callout callout--info">
+          <div class="callout__title">Line detail is missing</div>
+          <div class="callout__body">No payroll lines are stored for this paystub yet. Totals may require closer review.</div>
+        </div>`;
+    } else if (lines.length < 3) {
+      lineHint = `
+        <div class="callout callout--info">
+          <div class="callout__title">Line detail is limited</div>
+          <div class="callout__body">Only ${escapeHtml(String(lines.length))} line item(s) are stored. Totals may require closer review.</div>
+        </div>`;
+    } else if (lines.length >= 40) {
+      lineHint = `
+        <div class="callout callout--info">
+          <div class="callout__title">Line detail may be noisy</div>
+          <div class="callout__body">${escapeHtml(String(lines.length))} lines are stored. Large tables sometimes include extra rows; skim for obvious junk.</div>
+        </div>`;
+    }
 
     detailEl.innerHTML = `
       <div class="row">
@@ -225,6 +281,9 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
         </div>
         <div class="pill ${pillClass(effective)}">${escapeHtml(effective)}</div>
       </div>
+
+      ${extractionHint}
+      ${lineHint}
 
       ${
         canReopen
