@@ -2,18 +2,30 @@
 {% block content %}
 <header class="page-header">
   <h1 class="page-title">💸 Expenses</h1>
-  <div class="page-subtitle">Trends, categories, recent</div>
+  <div class="page-subtitle">Trends, categories, and transaction exploration</div>
 </header>
 
 <div id="exp-status"></div>
 
 <section class="grid grid--one">
-  <div class="panel">
-    <div class="panel__header">
+  <div class="panel panel--exp-upload">
+    <div class="panel__header panel__header--upload">
       <div class="panel__title">📤 Upload</div>
-      <div class="panel__meta">Add statement</div>
     </div>
-    <div id="expenses-upload"></div>
+    <div class="exp-upload-inset">
+      <div class="exp-upload-layout">
+        <div class="exp-upload-copy">
+          <p class="exp-upload-copy__lede">
+            <strong>Add a statement file</strong> — it registers here, then ingest runs automatically.
+          </p>
+          <dl class="exp-upload-copy__types">
+            <dt>Types</dt>
+            <dd>.csv · .xlsx · .xls</dd>
+          </dl>
+        </div>
+        <div id="expenses-upload" class="exp-upload-host exp-upload-host--split" aria-label="Statement file upload"></div>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -64,6 +76,85 @@
       <div class="panel__meta">Latest</div>
     </div>
     <div class="table" id="exp-recent"></div>
+  </div>
+</section>
+
+<section class="grid grid--one">
+  <div class="panel exp-explorer-panel">
+    <div class="panel__header">
+      <div class="panel__title">🔍 Transaction explorer</div>
+    </div>
+    <p class="exp-explorer__intro">
+      Pick a month range (up to 500 rows), then filter or search — all client-side.
+    </p>
+
+    <div class="exp-explorer__row exp-explorer__row--summary">
+      <div class="exp-explorer__summary" id="exp-explorer-summary" aria-live="polite"></div>
+      <div class="exp-explorer__meta" id="exp-explorer-meta">—</div>
+    </div>
+
+    <div class="exp-explorer__row exp-explorer__row--range" role="group" aria-label="Date range and search">
+      <label class="exp-explorer__field">
+        <span class="exp-explorer__label">From</span>
+        <input class="exp-explorer__input" type="month" id="exp-explorer-month-from" />
+      </label>
+      <label class="exp-explorer__field">
+        <span class="exp-explorer__label">To</span>
+        <input class="exp-explorer__input" type="month" id="exp-explorer-month-to" />
+      </label>
+      <label class="exp-explorer__field exp-explorer__field--grow">
+        <span class="exp-explorer__label">Search</span>
+        <input
+          class="exp-explorer__input"
+          type="search"
+          id="exp-explorer-search"
+          placeholder="Merchant, category, flags…"
+          autocomplete="off"
+        />
+      </label>
+    </div>
+
+    <div class="exp-explorer__row exp-explorer__row--filters" role="group" aria-label="Quick filters">
+      <div class="exp-explorer__filters-inner">
+        <label class="exp-explorer__check">
+          <input type="checkbox" id="exp-explorer-flagged" />
+          <span>Flagged only</span>
+        </label>
+        <label class="exp-explorer__check">
+          <input type="checkbox" id="exp-explorer-recurring" />
+          <span>Recurring only</span>
+        </label>
+        <label class="exp-explorer__field exp-explorer__field--narrow">
+          <span class="exp-explorer__label">Type</span>
+          <select class="exp-explorer__input" id="exp-explorer-type">
+            <option value="">All</option>
+            <option value="expense">Expense</option>
+            <option value="fee">Fee</option>
+          </select>
+        </label>
+        <label class="exp-explorer__field exp-explorer__field--narrow">
+          <span class="exp-explorer__label">Account</span>
+          <select class="exp-explorer__input" id="exp-explorer-account">
+            <option value="">All accounts</option>
+          </select>
+        </label>
+        <label class="exp-explorer__field exp-explorer__field--narrow">
+          <span class="exp-explorer__label">Category</span>
+          <select class="exp-explorer__input" id="exp-explorer-category">
+            <option value="">All categories</option>
+          </select>
+        </label>
+        <div class="exp-explorer__actions">
+          <button type="button" class="exp-explorer__btn" id="exp-explorer-clear">Clear filters</button>
+          <button type="button" class="exp-explorer__btn" id="exp-explorer-export" title="Download visible rows as CSV">
+            Export CSV
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <p class="exp-explorer__active" id="exp-explorer-active" hidden></p>
+    <div class="table exp-explorer__table-wrap" id="exp-explorer-table"></div>
   </div>
 </section>
 {% endblock %}

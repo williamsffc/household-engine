@@ -37,29 +37,569 @@ function cssVar(name, fallback) {
   return v || fallback;
 }
 
+// ── Transaction explorer: month range + search (client filter) ──────────────
+
+/** @param {string} ym "YYYY-MM" */
+function _lastDayOfMonth(ym) {
+  const [y, m] = ym.split("-").map((x) => parseInt(x, 10));
+  const last = new Date(y, m, 0).getDate();
+  return `${y}-${String(m).padStart(2, "0")}-${String(last).padStart(2, "0")}`;
+}
+
+/** Inclusive start/end YYYY-MM-DD from two "YYYY-MM" month pickers. */
+function rangeFromMonthInputs(fromYm, toYm) {
+  let a = fromYm;
+  let b = toYm;
+  if (a && b && a > b) {
+    const t = a;
+    a = b;
+    b = t;
+  }
+  if (!a || !b) return { start: null, end: null };
+  return {
+    start: `${a}-01`,
+    end: _lastDayOfMonth(b),
+  };
+}
+
+function filterTxnsBySearch(rows, q) {
+  if (!q || !String(q).trim()) return rows;
+  const s = String(q).trim().toLowerCase();
+  return rows.filter((r) => {
+    const parts = [
+      r.merchant_raw,
+      r.merchant_normalized,
+      r.category,
+      r.subcategory,
+      r.transaction_date,
+      r.document_id,
+      r.amount,
+      r.txn_type,
+      r.account_label,
+      r.flag_reason,
+      r.is_flagged,
+      r.is_recurring,
+    ]
+      .filter((x) => x !== undefined && x !== null)
+      .map((x) => String(x));
+    return parts.some((p) => p.toLowerCase().includes(s));
+  });
+}
+
+function isFlaggedRow(r) {
+  return r.is_flagged === 1 || r.is_flagged === true;
+}
+
+function isRecurringRow(r) {
+  return r.is_recurring === 1 || r.is_recurring === true;
+}
+
+function txnTypeNorm(r) {
+  return String(r.txn_type || "expense")
+    .trim()
+    .toLowerCase();
+}
+
+function truncateText(s, max) {
+  const t = String(s || "").trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, Math.max(0, max - 1))}…`;
+}
+
+function populateFilterSelect(selectEl, values, placeholder, previous) {
+  if (!selectEl) return;
+  const sorted = [...values].filter(Boolean).sort((a, b) => a.localeCompare(b));
+  const opts = [`<option value="">${placeholder}</option>`].concat(
+    sorted.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`)
+  );
+  selectEl.innerHTML = opts.join("");
+  if (previous === "" || sorted.includes(previous)) {
+    selectEl.value = previous;
+  }
+}
+
+function applyExplorerFilters(raw) {
+  let rows = raw.slice();
+  const typeEl = document.getElementById("exp-explorer-type");
+  const accEl = document.getElementById("exp-explorer-account");
+  const catEl = document.getElementById("exp-explorer-category");
+  const flaggedEl = document.getElementById("exp-explorer-flagged");
+  const recEl = document.getElementById("exp-explorer-recurring");
+  const searchEl = document.getElementById("exp-explorer-search");
+
+  const t = typeEl && typeEl.value;
+  if (t) rows = rows.filter((r) => txnTypeNorm(r) === t);
+
+  const acc = accEl && accEl.value;
+  if (acc) rows = rows.filter((r) => String(r.account_label || "") === acc);
+
+  const cat = catEl && catEl.value;
+  if (cat) rows = rows.filter((r) => String(r.category || "Uncategorized") === cat);
+
+  if (flaggedEl && flaggedEl.checked) rows = rows.filter(isFlaggedRow);
+  if (recEl && recEl.checked) rows = rows.filter(isRecurringRow);
+
+  rows = filterTxnsBySearch(rows, searchEl && searchEl.value);
+  return rows;
+}
+
+function explorerFiltersActive() {
+  const typeEl = document.getElementById("exp-explorer-type");
+  const accEl = document.getElementById("exp-explorer-account");
+  const catEl = document.getElementById("exp-explorer-category");
+  const flaggedEl = document.getElementById("exp-explorer-flagged");
+  const recEl = document.getElementById("exp-explorer-recurring");
+  const searchEl = document.getElementById("exp-explorer-search");
+  const q = searchEl && searchEl.value && searchEl.value.trim();
+  return Boolean(
+    (typeEl && typeEl.value) ||
+      (accEl && accEl.value) ||
+      (catEl && catEl.value) ||
+      (flaggedEl && flaggedEl.checked) ||
+      (recEl && recEl.checked) ||
+      q
+  );
+}
+
+function describeActiveFilters() {
+  const parts = [];
+  const flaggedEl = document.getElementById("exp-explorer-flagged");
+  const recEl = document.getElementById("exp-explorer-recurring");
+  const typeEl = document.getElementById("exp-explorer-type");
+  const accEl = document.getElementById("exp-explorer-account");
+  const catEl = document.getElementById("exp-explorer-category");
+  const searchEl = document.getElementById("exp-explorer-search");
+  if (flaggedEl && flaggedEl.checked) parts.push("Flagged only");
+  if (recEl && recEl.checked) parts.push("Recurring only");
+  if (typeEl && typeEl.value) parts.push(`Type: ${typeEl.value}`);
+  if (accEl && accEl.value) parts.push(`Account: ${accEl.value}`);
+  if (catEl && catEl.value) parts.push(`Category: ${catEl.value}`);
+  if (searchEl && searchEl.value.trim()) parts.push(`Search: “${truncateText(searchEl.value.trim(), 40)}”`);
+  return parts;
+}
+
+function renderExplorerSummary(summaryEl, visibleRows) {
+  if (!summaryEl) return;
+  const n = visibleRows.length;
+  let flagged = 0;
+  let recurring = 0;
+  let fees = 0;
+  visibleRows.forEach((r) => {
+    if (isFlaggedRow(r)) flagged += 1;
+    if (isRecurringRow(r)) recurring += 1;
+    if (txnTypeNorm(r) === "fee") fees += 1;
+  });
+  summaryEl.innerHTML = `
+    <span class="exp-explorer__stat"><strong>${n}</strong> visible</span>
+    <span class="exp-explorer__stat exp-explorer__stat--muted">${flagged} flagged</span>
+    <span class="exp-explorer__stat exp-explorer__stat--muted">${recurring} recurring</span>
+    <span class="exp-explorer__stat exp-explorer__stat--muted">${fees} fees</span>
+  `;
+}
+
+function updateActiveFiltersLine(activeEl) {
+  if (!activeEl) return;
+  const parts = describeActiveFilters();
+  if (parts.length === 0) {
+    activeEl.hidden = true;
+    activeEl.textContent = "";
+    return;
+  }
+  activeEl.hidden = false;
+  activeEl.textContent = `Filters: ${parts.join(" · ")}`;
+}
+
+function exportVisibleRowsCsv(rows) {
+  const headers = [
+    "transaction_date",
+    "txn_type",
+    "account_label",
+    "merchant_normalized",
+    "category",
+    "subcategory",
+    "amount",
+    "is_flagged",
+    "is_recurring",
+    "flag_reason",
+  ];
+  function csvCell(v) {
+    const t = String(v ?? "");
+    if (/[",\n\r]/.test(t)) return `"${t.replace(/"/g, '""')}"`;
+    return t;
+  }
+  const lines = [headers.join(",")].concat(
+    rows.map((r) =>
+      headers
+        .map((h) => {
+          let v = r[h];
+          if (h === "is_flagged") v = isFlaggedRow(r) ? "1" : "0";
+          if (h === "is_recurring") v = isRecurringRow(r) ? "1" : "0";
+          return csvCell(v);
+        })
+        .join(",")
+    )
+  );
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `expenses-explorer-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function clearExplorerFilters() {
+  const flaggedEl = document.getElementById("exp-explorer-flagged");
+  const recEl = document.getElementById("exp-explorer-recurring");
+  const typeEl = document.getElementById("exp-explorer-type");
+  const accEl = document.getElementById("exp-explorer-account");
+  const catEl = document.getElementById("exp-explorer-category");
+  const searchEl = document.getElementById("exp-explorer-search");
+  if (flaggedEl) flaggedEl.checked = false;
+  if (recEl) recEl.checked = false;
+  if (typeEl) typeEl.value = "";
+  if (accEl) accEl.value = "";
+  if (catEl) catEl.value = "";
+  if (searchEl) searchEl.value = "";
+}
+
+let _txCache = { key: null, rows: null };
+let _searchDebounce = null;
+let _explorerWired = false;
+
+function renderTxnTableInto(el, rows, emptyCtx) {
+  if (!el) return;
+  const rawLen = emptyCtx && typeof emptyCtx.rawLen === "number" ? emptyCtx.rawLen : 0;
+  const filterActive = emptyCtx && emptyCtx.filterActive;
+
+  if (!rows || rows.length === 0) {
+    if (rawLen === 0) {
+      el.innerHTML = `<div class="panel__empty">No transactions in this date range (or nothing loaded yet).</div>`;
+    } else if (filterActive) {
+      el.innerHTML = `<div class="panel__empty panel__empty--soft">No rows match your current filters or search. Try <button type="button" class="exp-explorer__linkbtn" id="exp-explorer-clear-inline">clearing filters</button>.</div>`;
+      const inline = document.getElementById("exp-explorer-clear-inline");
+      if (inline) {
+        inline.addEventListener("click", () => {
+          clearExplorerFilters();
+          refreshExplorer();
+        });
+      }
+    } else {
+      el.innerHTML = `<div class="panel__empty">No rows to show.</div>`;
+    }
+    return;
+  }
+  const head = `<table class="exp-txn-table" role="table" aria-label="Transactions">
+<thead><tr>
+  <th scope="col">Date</th>
+  <th scope="col">Type</th>
+  <th scope="col">Account</th>
+  <th scope="col">Merchant</th>
+  <th scope="col">Category</th>
+  <th scope="col">Recon</th>
+  <th scope="col" class="exp-txn-table__num">Amount</th>
+</tr></thead><tbody>`;
+  const body = rows
+    .map((r) => {
+      const date = escapeHtml((r.transaction_date || "").toString().slice(0, 10));
+      const tt = txnTypeNorm(r);
+      const typePill =
+        tt === "fee"
+          ? `<span class="pill pill--fee">Fee</span>`
+          : `<span class="pill pill--type-exp">Expense</span>`;
+      const acc = escapeHtml((r.account_label || "—").toString());
+      const merch = escapeHtml((r.merchant_normalized || r.merchant_raw || "—").toString());
+      const sub = r.subcategory ? ` <span class="row__subtitle">/ ${escapeHtml(r.subcategory)}</span>` : "";
+      const cat = `${escapeHtml((r.category || "Uncategorized").toString())}${sub}`;
+      const flagged = isFlaggedRow(r);
+      const rec = isRecurringRow(r);
+      const flagFull = (r.flag_reason && String(r.flag_reason).trim()) ? String(r.flag_reason) : "";
+      const flagShort = flagFull ? truncateText(flagFull, 96) : "";
+      const badges = [
+        flagged ? `<span class="pill pill--review">Flagged</span>` : "",
+        rec ? `<span class="pill pill--muted">Recurring</span>` : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      const reasonBlock =
+        flagged && flagFull
+          ? `<div class="exp-txn-flag-reason" title="${escapeHtml(flagFull)}">${escapeHtml(flagShort)}</div>`
+          : "";
+      const reconInner =
+        (badges || reasonBlock)
+          ? `<div class="exp-txn-recon-cell">${badges ? `<div class="exp-txn-badges">${badges}</div>` : ""}${reasonBlock}</div>`
+          : "—";
+      const amt = formatMoney(r.amount);
+      return `<tr>
+  <td>${date}</td>
+  <td>${typePill}</td>
+  <td>${acc}</td>
+  <td>${merch}</td>
+  <td>${cat}</td>
+  <td class="exp-txn-table__recon">${reconInner}</td>
+  <td class="exp-txn-table__num">${escapeHtml(amt)}</td>
+</tr>`;
+    })
+    .join("");
+  el.innerHTML = head + body + `</tbody></table>`;
+}
+
+async function runIngest(documentId) {
+  const res = await fetch(`/api/expenses/documents/${documentId}/ingest`, { method: "POST" });
+  const text = await res.text();
+  /** @type {any} */
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+  if (!res.ok) {
+    const detail = parseHttpErrorDetail(data, text, res.status);
+    return { ok: false, error: detail };
+  }
+  return { ok: true, data: data || {} };
+}
+
+function parseHttpErrorDetail(data, text, status) {
+  if (data && data.detail != null) {
+    const d = data.detail;
+    if (Array.isArray(d)) {
+      return d
+        .map((x) => (typeof x === "object" && x && "msg" in x ? x.msg : String(x)))
+        .join(" ");
+    }
+    return String(d);
+  }
+  if (text && text.length < 2000) return text;
+  return `Request failed (${status})`;
+}
+
+function setIngestResultBanner(result) {
+  const statusEl = document.getElementById("exp-status");
+  if (!statusEl) return;
+  if (!result) {
+    statusEl.innerHTML = "";
+    return;
+  }
+  if (!result.ok) {
+    statusEl.innerHTML = `
+      <div class="banner banner--error">
+        <div class="banner__title">Import failed</div>
+        <div class="banner__body">${escapeHtml(result.error || "Unknown error")}</div>
+      </div>`;
+    return;
+  }
+
+  const d = result.data || {};
+  const inserted = d.inserted != null ? d.inserted : 0;
+  const months = Array.isArray(d.months) && d.months.length ? d.months.join(", ") : "—";
+  const rep = d.sanitize_report;
+  const noteLines = Array.isArray(rep) ? rep.map((x) => String(x).trim()).filter(Boolean) : [];
+  const summary = `Inserted ${Number(inserted)} transaction(s). Affected months: ${months}.`;
+  const notesBlock =
+    noteLines.length > 0
+      ? `<div class="banner__ingest-notes"><div class="banner__ingest-notes-title">Sanitizer report</div><ul class="banner__ingest-list">${noteLines
+          .map((line) => `<li>${escapeHtml(line)}</li>`)
+          .join("")}</ul></div>`
+      : "";
+  statusEl.innerHTML = `
+    <div class="banner banner--success">
+      <div class="banner__title">Import complete</div>
+      <div class="banner__body">
+        <p class="banner__ingest-summary">${escapeHtml(summary)}</p>
+        ${notesBlock}
+      </div>
+    </div>`;
+}
+
 let _uploadMounted = false;
 let _chart = null;
 
-async function load() {
-  // Step 14C: in-app upload surface (expenses documents).
+function setBanner(kind, title, message) {
+  const statusEl = document.getElementById("exp-status");
+  if (!statusEl) return;
+  if (!kind) {
+    statusEl.innerHTML = "";
+    return;
+  }
+  const bannerClass = kind === "error" ? "banner--error" : kind === "success" ? "banner--success" : "banner--warning";
+  statusEl.innerHTML = `
+    <div class="banner ${bannerClass}">
+      <div class="banner__title">${escapeHtml(title || "Expenses")}</div>
+      <div class="banner__body">${escapeHtml(message || "Unknown error")}</div>
+    </div>
+  `;
+}
+
+function clearBanner() {
+  setBanner(null);
+}
+
+async function refreshExplorer() {
+  const fromEl = document.getElementById("exp-explorer-month-from");
+  const toEl = document.getElementById("exp-explorer-month-to");
+  const tableEl = document.getElementById("exp-explorer-table");
+  const metaEl = document.getElementById("exp-explorer-meta");
+  const summaryEl = document.getElementById("exp-explorer-summary");
+  const activeEl = document.getElementById("exp-explorer-active");
+  const accEl = document.getElementById("exp-explorer-account");
+  const catEl = document.getElementById("exp-explorer-category");
+  if (!fromEl || !toEl || !tableEl || !metaEl) return;
+
+  const { start, end } = rangeFromMonthInputs(fromEl.value, toEl.value);
+  if (!start || !end) {
+    metaEl.textContent = "Choose a month range";
+    if (summaryEl) summaryEl.innerHTML = "";
+    updateActiveFiltersLine(activeEl);
+    tableEl.innerHTML = `<div class="panel__empty">Set both From and To month values.</div>`;
+    return;
+  }
+
+  const key = `${start}|${end}`;
+  if (_txCache.key !== key || !_txCache.rows) {
+    metaEl.textContent = "Loading…";
+    const prevAcc = accEl ? accEl.value : "";
+    const prevCat = catEl ? catEl.value : "";
+    try {
+      const path = `/api/expenses/transactions?start_date=${encodeURIComponent(
+        start
+      )}&end_date=${encodeURIComponent(end)}&limit=500`;
+      const rows = await fetchJson(path);
+      _txCache = { key, rows: Array.isArray(rows) ? rows : [] };
+      const raw = _txCache.rows || [];
+      const accounts = new Set();
+      const categories = new Set();
+      raw.forEach((r) => {
+        if (r.account_label) accounts.add(String(r.account_label));
+        const c = r.category || "Uncategorized";
+        categories.add(String(c));
+      });
+      populateFilterSelect(accEl, accounts, "All accounts", prevAcc);
+      populateFilterSelect(catEl, categories, "All categories", prevCat);
+    } catch (e) {
+      metaEl.textContent = "Error";
+      if (summaryEl) summaryEl.innerHTML = "";
+      tableEl.innerHTML = `<div class="panel__empty">Could not load transactions: ${escapeHtml(e.message || String(e))}</div>`;
+      _txCache = { key: null, rows: null };
+      updateActiveFiltersLine(activeEl);
+      return;
+    }
+  }
+
+  const raw = _txCache.rows || [];
+  const filtered = applyExplorerFilters(raw);
+  const filterOn = explorerFiltersActive();
+
+  if (raw.length === 0) {
+    metaEl.textContent = "0 loaded in range (max 500)";
+  } else if (filtered.length === raw.length && !filterOn) {
+    metaEl.textContent = `${raw.length} loaded in range — all visible`;
+  } else {
+    metaEl.textContent = `${raw.length} loaded · ${filtered.length} visible${filterOn ? " (filters on)" : ""}`;
+  }
+
+  renderExplorerSummary(summaryEl, filtered);
+  updateActiveFiltersLine(activeEl);
+  renderTxnTableInto(tableEl, filtered, {
+    rawLen: raw.length,
+    filterActive: filterOn,
+  });
+}
+
+function wireExplorerOnce() {
+  if (_explorerWired) return;
+  const fromEl = document.getElementById("exp-explorer-month-from");
+  const toEl = document.getElementById("exp-explorer-month-to");
+  const searchEl = document.getElementById("exp-explorer-search");
+  const flaggedEl = document.getElementById("exp-explorer-flagged");
+  const recEl = document.getElementById("exp-explorer-recurring");
+  const typeEl = document.getElementById("exp-explorer-type");
+  const accEl = document.getElementById("exp-explorer-account");
+  const catEl = document.getElementById("exp-explorer-category");
+  const clearBtn = document.getElementById("exp-explorer-clear");
+  const exportBtn = document.getElementById("exp-explorer-export");
+  if (!fromEl || !toEl) return;
+  _explorerWired = true;
+  fromEl.addEventListener("change", () => {
+    _txCache = { key: null, rows: null };
+    refreshExplorer();
+  });
+  toEl.addEventListener("change", () => {
+    _txCache = { key: null, rows: null };
+    refreshExplorer();
+  });
+  if (searchEl) {
+    searchEl.addEventListener("input", () => {
+      if (_searchDebounce) window.clearTimeout(_searchDebounce);
+      _searchDebounce = window.setTimeout(() => {
+        _searchDebounce = null;
+        refreshExplorer();
+      }, 200);
+    });
+  }
+  [flaggedEl, recEl, typeEl, accEl, catEl].forEach((el) => {
+    if (el) el.addEventListener("change", () => refreshExplorer());
+  });
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      clearExplorerFilters();
+      refreshExplorer();
+    });
+  }
+  if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+      const raw = _txCache.rows || [];
+      const filtered = applyExplorerFilters(raw);
+      if (filtered.length === 0) return;
+      exportVisibleRowsCsv(filtered);
+    });
+  }
+}
+
+function setDefaultMonthInputs(monthly) {
+  const fromEl = document.getElementById("exp-explorer-month-from");
+  const toEl = document.getElementById("exp-explorer-month-to");
+  if (!fromEl || !toEl) return;
+  if (fromEl.dataset.explorerInit === "1") return;
+  const ym = monthly && monthly.length ? String(monthly[0].month) : null;
+  const d = new Date();
+  const fallback = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  const v = ym || fallback;
+  fromEl.value = v;
+  toEl.value = v;
+  fromEl.dataset.explorerInit = "1";
+  toEl.dataset.explorerInit = "1";
+}
+
+async function load(ingestOutcome) {
+  if (!ingestOutcome) {
+    clearBanner();
+  } else {
+    setIngestResultBanner(ingestOutcome);
+  }
+
   const uploadHost = document.getElementById("expenses-upload");
   if (!_uploadMounted && uploadHost && window.HE && typeof window.HE.mountUploadSurface === "function") {
     _uploadMounted = true;
     window.HE.mountUploadSurface(uploadHost, {
-      title: "Upload expense document",
-      help: "Upload CSV/XLS/XLSX statements for the Expenses module. This registers the document in the system.",
+      omitHead: true,
+      title: "",
+      help: "",
       moduleOwner: "expenses",
       accept: ".csv,.xlsx,.xls",
       onUploaded: async (payload) => {
-        const docId = payload?.document_id;
-        if (!docId) return;
-        try {
-          await fetch(`/api/expenses/documents/${docId}/ingest`, { method: "POST" });
-        } catch {
-          // Ignore; ingest errors will surface in later UX work (Step 14D).
+        const docId = payload && payload.document_id;
+        if (!docId) {
+          setBanner("error", "Upload incomplete", "No document_id returned from upload.");
+          return;
         }
-        // Reload the page data (not the upload UI).
-        await load();
+        const outcome = await runIngest(docId);
+        if (outcome.ok) {
+          _txCache = { key: null, rows: null };
+          await load({ ok: true, data: outcome.data });
+        } else {
+          await load({ ok: false, error: outcome.error });
+        }
       },
     });
   }
@@ -72,31 +612,14 @@ async function load() {
 
   const categoriesEl = document.getElementById("exp-categories");
   const recentEl = document.getElementById("exp-recent");
-  const statusEl = document.getElementById("exp-status");
   const metaEl = document.getElementById("exp-monthly-meta");
   const emptyEl = document.getElementById("exp-monthly-empty");
   const canvas = document.getElementById("exp-monthly-chart");
 
-  function setBanner(kind, title, message) {
-    if (!statusEl) return;
-    if (!kind) {
-      statusEl.innerHTML = "";
-      return;
-    }
-    const bannerClass = kind === "error" ? "banner--error" : kind === "success" ? "banner--success" : "banner--warning";
-    statusEl.innerHTML = `
-      <div class="banner ${bannerClass}">
-        <div class="banner__title">${escapeHtml(title || "Expenses")}</div>
-        <div class="banner__body">${escapeHtml(message || "Unknown error")}</div>
-      </div>
-    `;
+  function warnPartial() {
+    setBanner("warning", "Some data unavailable", "Showing what’s available.");
   }
 
-  function clearBanner() {
-    setBanner(null);
-  }
-
-  // Loading placeholders (keeps page calm).
   monthTotalEl.textContent = "—";
   monthCountEl.textContent = "—";
   topCatEl.textContent = "—";
@@ -112,21 +635,23 @@ async function load() {
   if (emptyEl) emptyEl.style.display = "none";
   if (canvas) canvas.style.display = "block";
 
-  clearBanner();
-
+  let monthApiFailed = false;
   let partialFailures = 0;
-  const warnPartial = () => {
+  const tryWarnPartial = () => {
+    if (ingestOutcome) return;
+    if (monthApiFailed) return;
     partialFailures += 1;
-    if (partialFailures === 1) {
-      setBanner("warning", "Some data unavailable", "Showing what’s available.");
-    }
+    if (partialFailures === 1) warnPartial();
   };
 
   let monthly = [];
   try {
     monthly = await fetchJson("/api/expenses/monthly");
   } catch (e) {
-    setBanner("error", "Expenses unavailable", e.message || String(e));
+    monthApiFailed = true;
+    if (!ingestOutcome) {
+      setBanner("error", "Expenses unavailable", e.message || String(e));
+    }
     monthly = [];
   }
 
@@ -134,12 +659,11 @@ async function load() {
   monthTotalEl.textContent = formatMoney(latest ? latest.total_expenses : 0);
   monthCountEl.textContent = String(latest ? latest.transaction_count : 0);
 
-  // Category breakdown.
   let categories = [];
   try {
     categories = await fetchJson("/api/expenses/categories?limit=12");
   } catch (e) {
-    warnPartial();
+    tryWarnPartial();
     categories = [];
   }
   const top = categories && categories.length ? categories[0] : null;
@@ -164,12 +688,11 @@ async function load() {
     "🏷️ No categories"
   );
 
-  // Recent expense activity.
   let recent = [];
   try {
     recent = await fetchJson("/api/expenses/recent?limit=25");
   } catch (e) {
-    warnPartial();
+    tryWarnPartial();
     recent = [];
   }
   recentCountEl.textContent = String((recent || []).length);
@@ -191,14 +714,20 @@ async function load() {
     "🕒 No recent transactions"
   );
 
-  // Monthly trend chart.
+  setDefaultMonthInputs(monthly);
+  wireExplorerOnce();
+  await refreshExplorer();
+
   if (!monthly || monthly.length === 0) {
-    emptyEl.style.display = "block";
-    canvas.style.display = "none";
+    if (emptyEl) emptyEl.style.display = "block";
+    if (canvas) canvas.style.display = "none";
+    if (metaEl) metaEl.textContent = "No trend data";
     return;
   }
 
-  metaEl.textContent = `Showing last ${Math.min(monthly.length, 12)} months`;
+  if (emptyEl) emptyEl.style.display = "none";
+  if (canvas) canvas.style.display = "block";
+  if (metaEl) metaEl.textContent = `Showing last ${Math.min(monthly.length, 12)} months`;
   const rows = monthly.slice(0, 12).reverse();
   const labels = rows.map((x) => x.month);
   const totals = rows.map((x) => Number(x.total_expenses || 0));

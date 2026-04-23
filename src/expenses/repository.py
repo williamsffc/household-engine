@@ -6,6 +6,36 @@ from typing import Any
 import pandas as pd
 
 
+def _as_sqlite_bool(v: Any) -> int:
+    """Coerce pandas/numpy truthy and NaN to 0/1 for SQLite INTEGER flags."""
+    if v is None:
+        return 0
+    try:
+        if pd.isna(v):
+            return 0
+    except (TypeError, ValueError):
+        pass
+    return 1 if bool(v) else 0
+
+
+def _flag_reason_text(v: Any) -> str | None:
+    if v is None:
+        return None
+    try:
+        if pd.isna(v):
+            return None
+    except (TypeError, ValueError):
+        pass
+    s = str(v).strip()
+    return s if s else None
+
+
+def _txn_type_outflow(v: Any) -> str:
+    """Persist expense vs fee; insert path only ever stores outflows."""
+    s = (str(v).strip().lower() if v is not None and not (isinstance(v, float) and pd.isna(v)) else "") or "expense"
+    return s if s in ("expense", "fee") else "expense"
+
+
 def fetch_document(conn: sqlite3.Connection, document_id: int) -> sqlite3.Row | None:
     return conn.execute("SELECT * FROM documents WHERE id = ?;", (document_id,)).fetchone()
 
@@ -44,6 +74,11 @@ def insert_transactions_from_dataframe(
             continue
 
         txn_date = pd.to_datetime(rec["date"]).strftime("%Y-%m-%d")
+        acc = rec.get("account", "")
+        account_label = str(acc).strip() if acc is not None and not (isinstance(acc, float) and pd.isna(acc)) else None
+        if account_label == "":
+            account_label = None
+
         conn.execute(
             """
             INSERT INTO expenses_transactions (
@@ -57,8 +92,13 @@ def insert_transactions_from_dataframe(
                 category,
                 subcategory,
                 currency,
-                fingerprint
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                fingerprint,
+                is_flagged,
+                flag_reason,
+                is_recurring,
+                txn_type,
+                account_label
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """,
             (
                 document_id,
@@ -72,6 +112,11 @@ def insert_transactions_from_dataframe(
                 str(rec.get("subcategory", "")) if rec.get("subcategory") is not None else None,
                 currency,
                 str(rec.get("id", "")) or None,
+                _as_sqlite_bool(rec.get("is_flagged")),
+                _flag_reason_text(rec.get("flag_reason")),
+                _as_sqlite_bool(rec.get("is_recurring")),
+                _txn_type_outflow(rec.get("txn_type")),
+                account_label,
             ),
         )
         inserted += 1
@@ -126,7 +171,12 @@ def load_historical_for_anomaly_detection(conn: sqlite3.Connection) -> pd.DataFr
             merchant_normalized,
             category,
             subcategory,
-            fingerprint
+            fingerprint,
+            is_flagged,
+            flag_reason,
+            is_recurring,
+            txn_type,
+            account_label
         FROM expenses_transactions
         ORDER BY transaction_date ASC;
         """
@@ -139,6 +189,13 @@ def load_historical_for_anomaly_detection(conn: sqlite3.Connection) -> pd.DataFr
     for r in rows:
         date = r["transaction_date"]
         month = str(date)[:7]
+        tt = (r["txn_type"] or "expense").strip().lower()
+        if tt not in ("expense", "fee"):
+            tt = "expense"
+        fr = r["flag_reason"]
+        if fr is None:
+            fr = ""
+        acc = r["account_label"] or ""
         data.append(
             {
                 "id": r["fingerprint"] or "",
@@ -146,14 +203,14 @@ def load_historical_for_anomaly_detection(conn: sqlite3.Connection) -> pd.DataFr
                 "description": r["merchant_raw"],
                 "merchant_clean": r["merchant_normalized"] or r["merchant_raw"],
                 "amount": float(r["amount"]),
-                "txn_type": "expense",
+                "txn_type": tt,
                 "category": r["category"] or "",
                 "subcategory": r["subcategory"] or "",
-                "account": "",
+                "account": acc,
                 "account_type": "",
-                "is_recurring": False,
-                "is_flagged": False,
-                "flag_reason": "",
+                "is_recurring": bool(r["is_recurring"]),
+                "is_flagged": bool(r["is_flagged"]),
+                "flag_reason": fr,
                 "month": month,
                 "source_file": "",
                 "imported_at": "",

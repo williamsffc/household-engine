@@ -215,17 +215,26 @@
       extraFieldsHtml: options?.extraFieldsHtml || "",
       getExtraFields: options?.getExtraFields || (() => ({})),
       onUploaded: options?.onUploaded || (() => {}),
+      /** When true, omit title/hint block (page provides copy beside the drop zone). */
+      omitHead: Boolean(options?.omitHead),
     };
 
     if (!rootEl) return;
     if (!cfg.moduleOwner) throw new Error("mountUploadSurface requires moduleOwner");
 
-    rootEl.innerHTML = `
-      <div class="upload" data-state="idle">
+    const headBlock = cfg.omitHead
+      ? ""
+      : `
         <div class="upload__head">
           <div class="upload__title">${escapeHtml(cfg.title)}</div>
           <div class="upload__hint">${escapeHtml(cfg.help)}</div>
-        </div>
+        </div>`;
+
+    const rootClass = `upload${cfg.omitHead ? " upload--omit-head" : ""}`;
+
+    rootEl.innerHTML = `
+      <div class="${rootClass}" data-state="idle">
+        ${headBlock}
 
         <div class="upload__fields">${cfg.extraFieldsHtml || ""}</div>
 
