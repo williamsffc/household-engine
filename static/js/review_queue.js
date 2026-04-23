@@ -125,6 +125,30 @@ function renderAuditEvents(events) {
   </div>`;
 }
 
+function extractReasonFromDetails(details) {
+  const s = String(details || "");
+  const m = s.match(/(?:^|,\\s*)reason=([^,]+)\\s*$/i);
+  return m ? String(m[1]).trim() : null;
+}
+
+function latestDecisionSummary(auditEvents) {
+  const rows = Array.isArray(auditEvents) ? auditEvents : [];
+  const interesting = rows.find((e) => {
+    const a = String(e?.action || "");
+    return a === "payroll_approved" || a === "payroll_rejected" || a === "payroll_reopened";
+  });
+  if (!interesting) return null;
+  const action = String(interesting.action || "");
+  const when = String(interesting.created_at || "—");
+  const actor = String(interesting.actor || "—");
+  const reason = extractReasonFromDetails(interesting.details);
+  let label = action;
+  if (action === "payroll_approved") label = "Approved";
+  if (action === "payroll_rejected") label = "Rejected";
+  if (action === "payroll_reopened") label = "Reopened";
+  return { label, when, actor, reason };
+}
+
 async function load() {
   if (_loading) return;
   _loading = true;
@@ -393,6 +417,31 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
       ${renderAuditEvents(review.audit_events)}
     `;
 
+    const latest = latestDecisionSummary(review.audit_events);
+    const latestHtml = latest
+      ? `
+        <div class="row" style="grid-template-columns: 1fr;">
+          <div class="row__left">
+            <div class="row__title">Latest decision</div>
+            <div class="row__subtitle">
+              ${escapeHtml(latest.label)} · ${escapeHtml(latest.when)} · ${escapeHtml(latest.actor)}${
+                latest.reason ? ` · reason: ${escapeHtml(latest.reason)}` : ""
+              }
+            </div>
+          </div>
+          <div class="pill pill--muted">recent</div>
+        </div>
+      `
+      : `
+        <div class="row" style="grid-template-columns: 1fr;">
+          <div class="row__left">
+            <div class="row__title">Latest decision</div>
+            <div class="row__subtitle">No approve/reject/reopen event recorded yet.</div>
+          </div>
+          <div class="pill pill--muted">—</div>
+        </div>
+      `;
+
     detailEl.innerHTML = `
       <div class="row">
         <div class="row__left">
@@ -407,6 +456,8 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
       ${lineDetailCallout}
 
       ${artifactMetaHtml}
+
+      ${latestHtml}
 
       ${auditHtml}
 

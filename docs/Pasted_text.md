@@ -1,10 +1,10 @@
-# Step 28 — Richer Review Artifact / Audit Surfacing
+# Step 29 — Latest Decision Summary
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 27 and is now best described as:
+Household Engine is complete through Step 28 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -21,6 +21,7 @@ Household Engine is complete through Step 27 and is now best described as:
 * plus scanned-PDF OCR fallback support
 * plus controlled reopen / undo workflow for payroll decisions
 * plus OCR / noisy-draft review hints
+* plus richer review artifact / audit surfacing
 
 The app currently has:
 
@@ -43,9 +44,9 @@ The app currently has:
 * better native-text payroll field and line extraction
 * OCR fallback for scanned/image-like paystubs
 * reopen workflow for mistaken payroll decisions
-* review-side OCR / sparse-line hints
+* recent lifecycle history + artifact metadata in Review Queue and Payroll detail
 
-## Step 14A–27 status
+## Step 14A–28 status
 
 Completed enough.
 
@@ -68,6 +69,7 @@ Delivered:
 * controlled reopen path for approved/rejected payroll items
 * targeted OCR-friendly extraction cleanup and line classification improvements
 * descriptive OCR/noisy-draft hints in Review Queue and Payroll detail
+* recent lifecycle and review artifact metadata surfacing in Review Queue / Payroll detail
 
 ## Product rule now locked in
 
@@ -78,109 +80,89 @@ That means:
 * household cashflow and planning remain the top-level view
 * payroll and documents still belong to specific household members
 * approved payroll remains the only payroll that affects analytics/planning
-* review history should be more visible, but still honest and modest
-* audit surfacing should not become a full versioning system
+* history surfacing should help users understand what happened quickly
+* the UI should prefer concise, honest summaries over overly dense audit presentation
 
-## Goal of Step 28
+## Goal of Step 29
 
-Make review artifacts and audit history easier to inspect in the UI so users can better understand what happened to a payroll item over time.
-
-This should improve trust and traceability without creating a complex history product.
+Add a small “Latest decision” summary line or block so users can immediately see the most important recent payroll decision without scanning the full lifecycle list.
 
 ## Product intent
 
-Right now important review/audit information exists, but much of it is still hidden in backend structures:
+Right now the app shows recent lifecycle history, which is useful, but users still have to scan it.
 
-* approve/reject/reopen events live in audit log
-* persisted review artifacts exist
-* decision metadata exists
-* review and payroll pages show some of this, but not enough of the timeline/context
+This step should answer, at a glance:
 
-This step should expose the most useful parts of that history in a calm, readable way.
+* what was the latest important decision?
+* when did it happen?
+* was it approved, rejected, or reopened?
+* was there a reason, if available?
+
+The goal is faster understanding, not a bigger audit console.
 
 ## Required outcome
 
-Improve review artifact / audit surfacing with focus on:
+Add a concise latest-decision summary with focus on:
 
-1. better visibility into review decisions and reopen events
-2. better visibility into persisted review context where useful
-3. clearer traceability in Review Queue and/or Payroll detail
-4. no regression to workflow semantics
-5. no regression to member-aware payroll model
-6. no full version-history system
+1. latest approve/reject/reopen event
+2. timestamp
+3. optional reason when available
+4. calm, readable placement in Review Queue and/or Payroll detail
+5. no regression to current recent-lifecycle display
+6. no regression to workflow semantics
 
 ## Scope guidance
 
-This is a modest history/traceability step, not a full audit product.
+This is a small traceability polish step, not a new history system.
 
 That means:
 
-* surface useful audit details already available
-* surface key review/decsion context in the UI
-* keep the implementation lightweight
-* do not build full diff/version history
-* do not redesign the whole review workflow
-* do not add fake timeline certainty where data is thin
+* derive the latest decision summary from existing audit rows
+* keep the UI compact
+* keep the full recent-lifecycle list available below
+* do not add a full timeline browser
+* do not redesign the pages
 
 ## Suggested focus areas
 
-### Audit visibility
+### Latest decision summary
 
-Potentially surface recent lifecycle events such as:
+Potential content:
 
-* approved
-* rejected
-* reopened
-
-with basic details like:
-
-* when
-* actor
-* optional reason where available
-
-### Review artifact visibility
-
-Potentially surface useful persisted artifact facts such as:
-
-* extraction source
-* redaction counts
-* when persisted/generated
-* whether OCR was involved
+* Latest decision: Approved / Rejected / Reopened
+* When: timestamp
+* Why: optional reason if present
 
 ### Placement
 
-Most likely useful places:
+Best likely surfaces:
 
 * Review Queue detail
 * Payroll detail
 
-Keep the history modest and readable.
+Keep it above the longer lifecycle list so users get the answer quickly.
+
+### Modesty
+
+Only summarize the latest meaningful lifecycle decision, not every event.
 
 ## Files likely involved
 
 Review first:
 
-* `src/services/review_queue.py`
 * `src/api/routes_review.py`
 * `src/api/routes_payroll.py`
 * `static/js/review_queue.js`
 * `static/js/payroll.js`
 * `static/css/app.css`
 
-Potentially inspect:
-
-* audit log access patterns
-* persisted review artifact storage
-* current payloads returned for review/payroll detail
-
 ## Deliverables for this step
 
-1. richer review artifact / audit surfacing
-2. clearer visibility of approve/reject/reopen history where practical
-3. clearer visibility of useful review artifact metadata where practical
+1. latest decision summary in review-oriented detail views
+2. preserved recent lifecycle list
+3. no regression to audit/history surfacing
 4. no regression to workflow semantics
 5. no regression to analytics semantics
-6. no full version-history system
 
 ## Constraints
 
@@ -191,10 +173,10 @@ Potentially inspect:
 * no unrelated global redesign
 * keep the system local-first and honest about history/state
 
-## What comes next after Step 28
+## What comes next after Step 29
 
-After Step 28, next work should likely be chosen from:
+After Step 29, next work should likely be chosen from:
 
 * additional payroll extraction refinement
 * command-center polish based on real usage
-* further review-quality improvements where they prove useful
+* further modest review-quality improvements

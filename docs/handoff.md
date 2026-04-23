@@ -40,10 +40,11 @@ Completed:
 * Step 25
 * Step 26
 * Step 27
+* Step 28
 
 Current active step:
 
-* Step 28 — Richer review artifact / audit surfacing
+* Step 29 — Latest decision summary
 
 ## Current status
 
@@ -64,6 +65,7 @@ Household Engine is now:
 * plus scanned-PDF OCR fallback support
 * plus controlled reopen / undo workflow for payroll decisions
 * plus OCR / noisy-draft review hints
+* plus richer review artifact / audit surfacing
 
 ## What is working now
 
@@ -120,26 +122,14 @@ Household Engine is now:
   * decided_at
   * decision_actor
   * rejection_reason
-* native-text payroll extraction quality improved:
-  * broader pay date extraction
-  * broader pay period extraction
-  * better gross/net matching
-  * payroll line extraction now feeds persisted draft lines
-  * validator now receives lines_total_taxes_deductions
-* scanned-PDF OCR fallback now exists:
-  * native PDF text remains preferred
-  * OCR fallback runs only when native text is empty/insufficient
-  * OCR text flows into the same scrub + extraction + review path
-  * OCR use is surfaced honestly via ocr_used / extraction_source metadata
-* targeted extraction follow-ups now exist:
-  * improved OCR-friendly label cleanup
-  * improved common tax/deduction/earning classification
-  * stronger summary-row filtering
-  * pretax no longer misclassifies as tax
+* native-text payroll extraction quality improved
+* scanned-PDF OCR fallback exists with honest source signaling
+* targeted extraction follow-ups exist
 * review-side hints now exist:
   * OCR source hinting
   * sparse/noisy line-detail hinting
-  * no fake confidence scoring
+* recent lifecycle history now exists in Review Queue and Payroll detail
+* review artifact metadata now surfaces in Review Queue detail
 
 ### Payroll page
 
@@ -147,16 +137,12 @@ Household Engine is now:
 * Payroll route is wired into UI routing
 * Payroll appears in shared navigation
 * payroll list/detail browsing exists
-* payroll payloads are enriched for UI:
-  * member display name / role
-  * document status
-  * original filename
-  * uploaded timestamp
+* payroll payloads are enriched for UI
 * household-vs-per-person payroll browsing exists
 * payroll status presentation is clearer across approved / rejected / in_review
 * Payroll detail shows rejection reason when present
 * Payroll detail supports reopening approved/rejected payroll back into review
-* Payroll detail now shows OCR/noisy-draft review hints where appropriate
+* Payroll detail now shows recent lifecycle history and OCR/noisy-draft hints
 
 ### Portfolio / planning
 
@@ -208,9 +194,7 @@ Household Engine is now:
 * navigation is now persistent
 * main content region is now the primary scrollable area
 * mobile drawer behavior remains in place with main scroll locking while open
-* shared spacing bugfix applied:
-  * `.grid--one` now has consistent bottom spacing
-  * `app.css` cache-busted to current version
+* shared spacing bugfix applied and cache-busted
 
 ### Shared upload interaction layer
 
@@ -284,16 +268,16 @@ This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
-### Review artifact / audit surfacing
+### Traceability polish
 
-* audit history is still mostly backend-visible rather than clearly surfaced in UI
-* reopen/approve/reject event history is not yet easy to inspect in Review Queue / Payroll detail
-* persisted review artifact metadata is still only partly surfaced
+* no concise “latest decision” summary yet above the recent lifecycle list
+* users still need to scan recent lifecycle entries for the most important answer
 
 ### Later refinement opportunities
 
 * additional extraction refinement may still be useful
 * more command-center polish may still be useful
+* further review-quality improvements may still be useful
 
 ### Deferred advanced items
 
@@ -307,10 +291,10 @@ This is the intended model for Person-M and Person-W going forward.
 
 Proceed with:
 
-* Step 28 — Richer review artifact / audit surfacing
+* Step 29 — Latest decision summary
 
 ## Important current truth
 
-The payroll workflow is now strong, forgiving, and more honest at review time.
+The app now exposes recent lifecycle and review artifact context, but the fastest answer is still missing.
 
-The next best move is to expose more of the existing review/audit history in the UI so users can understand what happened to a payroll item over time without needing a full versioning system.
+The next best move is a small traceability polish: show the latest decision summary first, then keep the recent lifecycle list underneath.
