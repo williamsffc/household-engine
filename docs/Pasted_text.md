@@ -1,10 +1,10 @@
-# Step 29 — Latest Decision Summary
+# Step 30 — Decision Metadata Summary Polish
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 28 and is now best described as:
+Household Engine is complete through Step 29 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -22,6 +22,7 @@ Household Engine is complete through Step 28 and is now best described as:
 * plus controlled reopen / undo workflow for payroll decisions
 * plus OCR / noisy-draft review hints
 * plus richer review artifact / audit surfacing
+* plus latest decision summary
 
 The app currently has:
 
@@ -45,8 +46,9 @@ The app currently has:
 * OCR fallback for scanned/image-like paystubs
 * reopen workflow for mistaken payroll decisions
 * recent lifecycle history + artifact metadata in Review Queue and Payroll detail
+* latest decision summary in review-oriented detail views
 
-## Step 14A–28 status
+## Step 14A–29 status
 
 Completed enough.
 
@@ -70,6 +72,7 @@ Delivered:
 * targeted OCR-friendly extraction cleanup and line classification improvements
 * descriptive OCR/noisy-draft hints in Review Queue and Payroll detail
 * recent lifecycle and review artifact metadata surfacing in Review Queue / Payroll detail
+* latest decision summary above the lifecycle list
 
 ## Product rule now locked in
 
@@ -80,71 +83,69 @@ That means:
 * household cashflow and planning remain the top-level view
 * payroll and documents still belong to specific household members
 * approved payroll remains the only payroll that affects analytics/planning
-* history surfacing should help users understand what happened quickly
-* the UI should prefer concise, honest summaries over overly dense audit presentation
+* history/decision surfacing should help users understand status quickly
+* the UI should prefer compact, honest summaries over dense audit presentation
 
-## Goal of Step 29
+## Goal of Step 30
 
-Add a small “Latest decision” summary line or block so users can immediately see the most important recent payroll decision without scanning the full lifecycle list.
+Add a small “decision metadata” summary block so the most important decision-specific details are visible immediately without requiring users to scan lifecycle details.
 
 ## Product intent
 
-Right now the app shows recent lifecycle history, which is useful, but users still have to scan it.
+Right now the app shows:
 
-This step should answer, at a glance:
+* latest decision summary
+* recent lifecycle list
+* rejection reason in some places
 
-* what was the latest important decision?
-* when did it happen?
-* was it approved, rejected, or reopened?
-* was there a reason, if available?
+This step should tighten that into a cleaner, more obvious summary of the current decision state, especially when:
 
-The goal is faster understanding, not a bigger audit console.
+* a paystub is currently rejected
+* a paystub was recently reopened
+* a useful reason exists
 
 ## Required outcome
 
-Add a concise latest-decision summary with focus on:
+Add compact decision metadata surfacing with focus on:
 
-1. latest approve/reject/reopen event
-2. timestamp
-3. optional reason when available
-4. calm, readable placement in Review Queue and/or Payroll detail
-5. no regression to current recent-lifecycle display
-6. no regression to workflow semantics
+1. clear rejection reason display when currently rejected
+2. clear reopen reason/context when recently reopened and available
+3. calm, compact placement near latest decision summary
+4. no regression to recent lifecycle list
+5. no regression to workflow semantics
+6. no regression to analytics semantics
 
 ## Scope guidance
 
-This is a small traceability polish step, not a new history system.
+This is a small trust/traceability polish step, not a new workflow system.
 
 That means:
 
-* derive the latest decision summary from existing audit rows
+* use already-available decision/audit data where possible
 * keep the UI compact
-* keep the full recent-lifecycle list available below
-* do not add a full timeline browser
+* avoid duplicate clutter
+* keep the recent lifecycle list below for deeper detail
 * do not redesign the pages
+* do not build a full history viewer
 
 ## Suggested focus areas
 
-### Latest decision summary
+### Current rejected state
 
-Potential content:
+If the paystub is currently rejected and a rejection reason exists, make it very visible.
 
-* Latest decision: Approved / Rejected / Reopened
-* When: timestamp
-* Why: optional reason if present
+### Recently reopened state
+
+If the latest decision is reopen and an optional reason exists, surface it clearly.
 
 ### Placement
 
 Best likely surfaces:
 
-* Review Queue detail
 * Payroll detail
+* Review Queue detail, where useful
 
-Keep it above the longer lifecycle list so users get the answer quickly.
-
-### Modesty
-
-Only summarize the latest meaningful lifecycle decision, not every event.
+Keep it near the latest decision summary.
 
 ## Files likely involved
 
@@ -158,11 +159,11 @@ Review first:
 
 ## Deliverables for this step
 
-1. latest decision summary in review-oriented detail views
-2. preserved recent lifecycle list
-3. no regression to audit/history surfacing
-4. no regression to workflow semantics
-5. no regression to analytics semantics
+1. compact decision metadata summary
+2. clearer visibility of rejection/reopen reasons where available
+3. preserved latest-decision summary
+4. preserved recent lifecycle list
+5. no regression to workflow or analytics semantics
 
 ## Constraints
 
@@ -173,10 +174,10 @@ Review first:
 * no unrelated global redesign
 * keep the system local-first and honest about history/state
 
-## What comes next after Step 29
+## What comes next after Step 30
 
-After Step 29, next work should likely be chosen from:
+After Step 30, next work should likely be chosen from:
 
-* additional payroll extraction refinement
+* additional extraction refinement
 * command-center polish based on real usage
 * further modest review-quality improvements

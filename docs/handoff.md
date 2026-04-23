@@ -41,10 +41,11 @@ Completed:
 * Step 26
 * Step 27
 * Step 28
+* Step 29
 
 Current active step:
 
-* Step 29 — Latest decision summary
+* Step 30 — Decision metadata summary polish
 
 ## Current status
 
@@ -66,6 +67,7 @@ Household Engine is now:
 * plus controlled reopen / undo workflow for payroll decisions
 * plus OCR / noisy-draft review hints
 * plus richer review artifact / audit surfacing
+* plus latest decision summary
 
 ## What is working now
 
@@ -111,17 +113,9 @@ Household Engine is now:
 * ownership mismatch protection exists for review decisions
 * approved payroll becomes analytics-eligible
 * rejected payroll stays out of analytics
-* reopen / undo workflow now exists:
-  * approved -> in_review
-  * rejected -> in_review
-  * paystub status reset to draft on reopen
-  * reopen is audit-logged
-  * reopened approved items stop counting toward approved-only analytics
+* reopen / undo workflow now exists
 * persisted payroll review artifacts now exist
-* persisted payroll decision metadata now exists:
-  * decided_at
-  * decision_actor
-  * rejection_reason
+* persisted payroll decision metadata now exists
 * native-text payroll extraction quality improved
 * scanned-PDF OCR fallback exists with honest source signaling
 * targeted extraction follow-ups exist
@@ -130,6 +124,7 @@ Household Engine is now:
   * sparse/noisy line-detail hinting
 * recent lifecycle history now exists in Review Queue and Payroll detail
 * review artifact metadata now surfaces in Review Queue detail
+* latest decision summary now appears in Review Queue and Payroll detail
 
 ### Payroll page
 
@@ -142,7 +137,8 @@ Household Engine is now:
 * payroll status presentation is clearer across approved / rejected / in_review
 * Payroll detail shows rejection reason when present
 * Payroll detail supports reopening approved/rejected payroll back into review
-* Payroll detail now shows recent lifecycle history and OCR/noisy-draft hints
+* Payroll detail shows recent lifecycle history and OCR/noisy-draft hints
+* Payroll detail now shows latest decision summary
 
 ### Portfolio / planning
 
@@ -154,9 +150,7 @@ Household Engine is now:
 * Portfolio shows supporting assumptions and recent cashflow context
 * Portfolio shows honest limited/unavailable warning states when approved payroll is missing or insufficient
 * Portfolio remains a modest, household-first planning surface
-* Portfolio controls exist for:
-  * trailing_months
-  * liquidity_reserve_months
+* Portfolio controls exist
 * recompute/apply UX exists
 * Reset to defaults exists
 * current assumptions summary exists
@@ -170,11 +164,7 @@ Household Engine is now:
 * trend / forecast endpoints
 * portfolio / deployable-surplus endpoint
 * overview readiness endpoint/strip exists
-* readiness reflects:
-  * approved payroll presence
-  * expense-history coverage
-  * in-review queue depth
-  * planning availability
+* readiness reflects approved payroll presence, expense-history coverage, in-review queue depth, and planning availability
 * `/api/overview/summary` now returns truthful pending_reviews and payroll_ready
 * payroll analytics remain approved-only
 * household totals remain the rollup of approved per-member payroll
@@ -258,20 +248,16 @@ The app is **household-first**, but every payroll record belongs to exactly **on
 This means:
 
 * payroll is tracked per member
-* approved payroll analytics support both:
-  * per-member views
-  * household combined rollups
+* approved payroll analytics support both per-member views and household combined rollups
 * household payroll totals are computed from approved per-member payroll
 * household planning remains grounded in approved household cashflow
-
-This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
 ### Traceability polish
 
-* no concise “latest decision” summary yet above the recent lifecycle list
-* users still need to scan recent lifecycle entries for the most important answer
+* no compact decision-metadata block yet beyond the latest decision summary
+* rejection/reopen reasons are not yet surfaced as clearly as they could be near the summary
 
 ### Later refinement opportunities
 
@@ -291,10 +277,10 @@ This is the intended model for Person-M and Person-W going forward.
 
 Proceed with:
 
-* Step 29 — Latest decision summary
+* Step 30 — Decision metadata summary polish
 
 ## Important current truth
 
-The app now exposes recent lifecycle and review artifact context, but the fastest answer is still missing.
+The app now answers “what happened most recently?” quickly.
 
-The next best move is a small traceability polish: show the latest decision summary first, then keep the recent lifecycle list underneath.
+The next best move is a small polish pass so the associated decision metadata — especially rejection/reopen reasons — is surfaced just as clearly.

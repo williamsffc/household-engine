@@ -134,6 +134,17 @@ function latestDecisionSummary(auditEvents) {
   return { label, when, actor, reason };
 }
 
+function decisionMetadataSummary(latest, paystub) {
+  if (!latest) return { has: false, reason: null };
+  const p = paystub || {};
+  // Prefer explicit stored rejection_reason when paystub is currently rejected.
+  const effective = effectiveStatusLabel(p);
+  if (latest.label === "Rejected" && effective === "rejected" && p.rejection_reason) {
+    return { has: true, reason: String(p.rejection_reason) };
+  }
+  return { has: true, reason: latest.reason || null };
+}
+
 async function loadMembers(selectEl) {
   const members = await fetchJson("/api/household/members");
   const options = [
@@ -348,6 +359,21 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
         </div>
       `;
 
+    const meta = decisionMetadataSummary(latest, p);
+    const decisionMetaHtml = meta.has
+      ? `
+        <div class="row" style="grid-template-columns: 1fr;">
+          <div class="row__left">
+            <div class="row__title">Decision metadata</div>
+            <div class="row__subtitle">${
+              meta.reason ? `reason: ${escapeHtml(meta.reason)}` : "No reason recorded for the latest decision."
+            }</div>
+          </div>
+          <div class="pill pill--muted">meta</div>
+        </div>
+      `
+      : ``;
+
     detailEl.innerHTML = `
       <div class="row">
         <div class="row__left">
@@ -361,6 +387,8 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
       ${lineHint}
 
       ${latestHtml}
+
+      ${decisionMetaHtml}
 
       <div class="row" style="grid-template-columns: 1fr;">
         <div class="row__left">

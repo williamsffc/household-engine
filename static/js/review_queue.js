@@ -149,6 +149,11 @@ function latestDecisionSummary(auditEvents) {
   return { label, when, actor, reason };
 }
 
+function decisionMetadataSummary(latest) {
+  if (!latest) return { has: false, reason: null };
+  return { has: true, reason: latest.reason || null };
+}
+
 async function load() {
   if (_loading) return;
   _loading = true;
@@ -442,6 +447,21 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
         </div>
       `;
 
+    const meta = decisionMetadataSummary(latest);
+    const decisionMetaHtml = meta.has
+      ? `
+        <div class="row" style="grid-template-columns: 1fr;">
+          <div class="row__left">
+            <div class="row__title">Decision metadata</div>
+            <div class="row__subtitle">${
+              meta.reason ? `reason: ${escapeHtml(meta.reason)}` : "No reason recorded for the latest decision."
+            }</div>
+          </div>
+          <div class="pill pill--muted">meta</div>
+        </div>
+      `
+      : ``;
+
     detailEl.innerHTML = `
       <div class="row">
         <div class="row__left">
@@ -458,6 +478,8 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
       ${artifactMetaHtml}
 
       ${latestHtml}
+
+      ${decisionMetaHtml}
 
       ${auditHtml}
 
