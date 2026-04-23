@@ -11,7 +11,10 @@ async function fetchJson(path) {
   const res = await fetch(path, { headers: { Accept: "application/json" } });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`${path} failed: ${res.status} ${text}`);
+    const err = new Error(text || `${path} failed`);
+    err.status = res.status;
+    err.path = path;
+    throw err;
   }
   return await res.json();
 }
@@ -24,7 +27,10 @@ async function postJson(path, body) {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`${path} failed: ${res.status} ${text}`);
+    const err = new Error(text || `${path} failed`);
+    err.status = res.status;
+    err.path = path;
+    throw err;
   }
   return await res.json();
 }
@@ -74,20 +80,24 @@ function getParamInt(key) {
   return Number.isFinite(n) ? Math.trunc(n) : null;
 }
 
-function setBannerError(message) {
+function setBanner(kind, title, message) {
   const el = document.getElementById("rq-status");
   if (!el) return;
+  if (!kind) {
+    el.innerHTML = "";
+    return;
+  }
+  const bannerClass = kind === "error" ? "banner--error" : "banner--warning";
   el.innerHTML = `
-    <div class="banner banner--error">
-      <div class="banner__title">Review Queue unavailable</div>
+    <div class="banner ${bannerClass}">
+      <div class="banner__title">${escapeHtml(title || "Review Queue")}</div>
       <div class="banner__body">${escapeHtml(message || "Unknown error")}</div>
     </div>
   `;
 }
 
 function clearBanner() {
-  const el = document.getElementById("rq-status");
-  if (el) el.innerHTML = "";
+  setBanner(null);
 }
 
 function skeletonRows(n) {
@@ -305,7 +315,7 @@ async function load() {
     try {
       items = await fetchJson("/api/review-queue");
     } catch (e) {
-      setBannerError(e.message || String(e));
+      setBanner("error", "Review Queue unavailable", e.message || String(e));
       items = [];
     }
 
@@ -600,10 +610,16 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
           setParam("document_id", null);
           await load();
         } catch (e) {
-          setBannerError(e.message || String(e));
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = "Approve";
+          if (Number(e?.status) === 409) {
+            setBanner("warning", "Already decided", "This item’s state changed (or was already decided). Refreshing to backend truth…");
+            setParam("document_id", null);
+            await load();
+          } else {
+            setBanner("error", "Approve failed", e.message || String(e));
+            if (btn) {
+              btn.disabled = false;
+              btn.textContent = "Approve";
+            }
           }
         }
       });
@@ -621,10 +637,16 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
           setParam("document_id", null);
           await load();
         } catch (e) {
-          setBannerError(e.message || String(e));
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = "Reject";
+          if (Number(e?.status) === 409) {
+            setBanner("warning", "Already decided", "This item’s state changed (or was already decided). Refreshing to backend truth…");
+            setParam("document_id", null);
+            await load();
+          } else {
+            setBanner("error", "Reject failed", e.message || String(e));
+            if (btn) {
+              btn.disabled = false;
+              btn.textContent = "Reject";
+            }
           }
         }
       });

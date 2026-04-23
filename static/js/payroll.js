@@ -11,7 +11,10 @@ async function fetchJson(path) {
   const res = await fetch(path, { headers: { Accept: "application/json" } });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`${path} failed: ${res.status} ${text}`);
+    const err = new Error(text || `${path} failed`);
+    err.status = res.status;
+    err.path = path;
+    throw err;
   }
   return await res.json();
 }
@@ -24,7 +27,10 @@ async function postJson(path, body) {
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`${path} failed: ${res.status} ${text}`);
+    const err = new Error(text || `${path} failed`);
+    err.status = res.status;
+    err.path = path;
+    throw err;
   }
   return await res.json();
 }
@@ -53,20 +59,24 @@ function bindListRowInteractions(listEl, selector, onActivate) {
   });
 }
 
-function setBannerError(message) {
+function setBanner(kind, title, message) {
   const el = document.getElementById("payroll-status");
   if (!el) return;
+  if (!kind) {
+    el.innerHTML = "";
+    return;
+  }
+  const bannerClass = kind === "error" ? "banner--error" : "banner--warning";
   el.innerHTML = `
-    <div class="banner banner--error">
-      <div class="banner__title">Payroll unavailable</div>
+    <div class="banner ${bannerClass}">
+      <div class="banner__title">${escapeHtml(title || "Payroll")}</div>
       <div class="banner__body">${escapeHtml(message || "Unknown error")}</div>
     </div>
   `;
 }
 
 function clearBanner() {
-  const el = document.getElementById("payroll-status");
-  if (el) el.innerHTML = "";
+  setBanner(null);
 }
 
 function skeletonRows(n) {
@@ -312,7 +322,7 @@ async function load() {
       if (detailMetaEl) detailMetaEl.textContent = "";
     }
   } catch (e) {
-    setBannerError(e.message || String(e));
+    setBanner("error", "Payroll unavailable", e.message || String(e));
     renderRows(listEl, [], "No payroll paystubs.");
     renderRows(detailEl, [], "No paystub selected.");
     if (metaEl) metaEl.textContent = "";
@@ -547,10 +557,19 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
           });
           window.location.href = `/review-queue?document_id=${encodeURIComponent(String(p.document_id))}`;
         } catch (err) {
-          setBannerError(err.message || String(err));
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = "Reopen into Review Queue";
+          if (Number(err?.status) === 409) {
+            setBanner(
+              "warning",
+              "Already changed",
+              "This paystub’s state changed (or was already reopened). Refreshing to backend truth…"
+            );
+            await load();
+          } else {
+            setBanner("error", "Reopen failed", err.message || String(err));
+            if (btn) {
+              btn.disabled = false;
+              btn.textContent = "Reopen into Review Queue";
+            }
           }
         }
       });
@@ -562,5 +581,5 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
 
 load().catch((err) => {
   console.error(err);
-  setBannerError(err.message || String(err));
+  setBanner("error", "Payroll unavailable", err.message || String(err));
 });
