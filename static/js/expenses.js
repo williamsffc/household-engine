@@ -161,7 +161,7 @@ async function load() {
         </div>
       `;
     }),
-    "No categories"
+    "🏷️ No categories"
   );
 
   // Recent expense activity.
@@ -188,7 +188,7 @@ async function load() {
         </div>
       `;
     }),
-    "No recent transactions"
+    "🕒 No recent transactions"
   );
 
   // Monthly trend chart.

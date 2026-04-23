@@ -315,7 +315,7 @@ async function load() {
           </div>
         `;
       }),
-      "No paystubs"
+      "🧾 No paystubs"
     );
 
     bindListRowInteractions(listEl, "[data-paystub-id]", async (el) => {
@@ -334,7 +334,7 @@ async function load() {
     }
   } catch (e) {
     setBanner("error", "Payroll unavailable", e.message || String(e));
-    renderRows(listEl, [], "No paystubs");
+    renderRows(listEl, [], "🧾 No paystubs");
     renderRows(detailEl, [], "Select a paystub");
     if (metaEl) metaEl.textContent = "";
     if (detailMetaEl) detailMetaEl.textContent = "";

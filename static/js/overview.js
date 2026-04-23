@@ -194,7 +194,7 @@ async function load() {
         </div>
       `;
     }),
-    "No documents yet."
+    "🗂️ No documents"
   );
 
   // Pending review widget.
@@ -219,7 +219,7 @@ async function load() {
         </div>
       `;
     }),
-    pending ? "No pending review items." : "Pending review list unavailable."
+    pending ? "✅ Nothing to review" : "⚠️ Review list unavailable"
   );
 
   // Cashflow chart (view-backed).

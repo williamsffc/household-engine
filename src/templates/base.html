@@ -51,23 +51,23 @@
             {# lightweight active highlighting #}
             <a class="sidebar__link {% if request and request.url.path == '/' %}sidebar__link--active{% endif %}" href="/">
               <span class="sidebar__icon" aria-hidden="true">⌂</span>
-              <span class="sidebar__label">Overview</span>
+              <span class="sidebar__label">🏠 Overview</span>
             </a>
             <a class="sidebar__link {% if request and request.url.path.startswith('/expenses') %}sidebar__link--active{% endif %}" href="/expenses">
               <span class="sidebar__icon" aria-hidden="true">≡</span>
-              <span class="sidebar__label">Expenses</span>
+              <span class="sidebar__label">💸 Expenses</span>
             </a>
             <a class="sidebar__link {% if request and request.url.path.startswith('/review-queue') %}sidebar__link--active{% endif %}" href="/review-queue">
               <span class="sidebar__icon" aria-hidden="true">✓</span>
-              <span class="sidebar__label">Review Queue</span>
+              <span class="sidebar__label">📋 Review</span>
             </a>
             <a class="sidebar__link {% if request and request.url.path.startswith('/payroll') %}sidebar__link--active{% endif %}" href="/payroll">
               <span class="sidebar__icon" aria-hidden="true">$</span>
-              <span class="sidebar__label">Payroll</span>
+              <span class="sidebar__label">🧾 Payroll</span>
             </a>
             <a class="sidebar__link {% if request and request.url.path.startswith('/portfolio') %}sidebar__link--active{% endif %}" href="/portfolio">
               <span class="sidebar__icon" aria-hidden="true">◈</span>
-              <span class="sidebar__label">Portfolio</span>
+              <span class="sidebar__label">📈 Portfolio</span>
             </a>
           </nav>
         </aside>

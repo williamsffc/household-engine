@@ -356,7 +356,7 @@ async function load() {
           </div>
         `;
       }),
-      "Nothing to review"
+      "✅ Nothing to review"
     );
 
     // click behavior
