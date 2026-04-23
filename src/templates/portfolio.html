@@ -5,7 +5,7 @@
   <div class="page-subtitle">Deployable surplus and planning</div>
 </header>
 
-<div id="portfolio-status"></div>
+<div id="portfolio-status" role="status" aria-live="polite"></div>
 
 <section class="grid grid--one">
   <div class="panel">
@@ -15,15 +15,33 @@
     </div>
     <div class="kv">
       <div class="kv__item">
-        <div class="kv__label">Trailing months</div>
+        <label class="kv__label" for="portfolio-trailing-months">Trailing months</label>
         <div class="kv__value">
-          <input id="portfolio-trailing-months" class="upload__input" inputmode="numeric" placeholder="3" />
+          <input
+            id="portfolio-trailing-months"
+            class="upload__input"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="12"
+            step="1"
+            placeholder="3"
+          />
         </div>
       </div>
       <div class="kv__item">
-        <div class="kv__label">Liquidity reserve months</div>
+        <label class="kv__label" for="portfolio-liquidity-reserve-months">Liquidity reserve months</label>
         <div class="kv__value">
-          <input id="portfolio-liquidity-reserve-months" class="upload__input" inputmode="decimal" placeholder="1.0" />
+          <input
+            id="portfolio-liquidity-reserve-months"
+            class="upload__input"
+            type="number"
+            inputmode="decimal"
+            min="0"
+            max="6"
+            step="0.1"
+            placeholder="1.0"
+          />
         </div>
       </div>
     </div>

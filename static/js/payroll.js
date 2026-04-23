@@ -7,6 +7,30 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
+const PAYROLL_LIST_LIMIT = 100;
+
+function formatDate(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function formatDateTime(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 async function fetchJson(path) {
   const res = await fetch(path, { headers: { Accept: "application/json" } });
   if (!res.ok) {
@@ -48,14 +72,7 @@ function bindListRowInteractions(listEl, selector, onActivate) {
   listEl.querySelectorAll(selector).forEach((el) => {
     if (el.dataset.bound) return;
     el.dataset.bound = "1";
-    el.setAttribute("tabindex", "0");
-    el.setAttribute("role", "button");
     el.addEventListener("click", () => onActivate(el));
-    el.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      e.preventDefault();
-      onActivate(el);
-    });
   });
 }
 
@@ -156,7 +173,7 @@ function latestDecisionSummary(auditEvents) {
   });
   if (!interesting) return null;
   const action = String(interesting.action || "");
-  const when = String(interesting.created_at || "—");
+  const when = formatDateTime(interesting.created_at || "—");
   const actor = String(interesting.actor || "—");
   const reason = extractReasonFromDetails(interesting.details);
   let label = action;
@@ -222,7 +239,7 @@ function renderAuditEvents(events) {
       .slice(0, 12)
       .map((e) => {
         const action = escapeHtml(prettyAuditAction(e.action));
-        const when = escapeHtml(e.created_at || "—");
+        const when = escapeHtml(formatDateTime(e.created_at || "—"));
         const actor = escapeHtml(e.actor || "—");
         const details = escapeHtml(summarizeAuditDetails(e.details || ""));
         return `
@@ -289,7 +306,7 @@ async function load() {
     const params = new URLSearchParams();
     if (memberId != null) params.set("member_id", String(memberId));
     if (status) params.set("status", status);
-    params.set("limit", "200");
+    params.set("limit", String(PAYROLL_LIST_LIMIT));
 
     const items = await fetchJson(`/api/payroll/paystubs?${params.toString()}`);
     if (metaEl) metaEl.textContent = `${items.length || 0} paystub(s)`;
@@ -301,18 +318,18 @@ async function load() {
       items.map((p) => {
         const id = Number(p.id);
         const member = escapeHtml(p.member_display_name || `member_id=${p.member_id}`);
-        const date = escapeHtml(p.pay_date || "—");
+        const date = escapeHtml(formatDate(p.pay_date || "—"));
         const net = p.net_pay != null ? escapeHtml(String(p.net_pay)) : "—";
         const effective = effectiveStatusLabel(p);
         const active = selectedId === id;
         return `
-          <div class="row list-row ${active ? "row--active" : ""}" data-paystub-id="${id}">
+          <button type="button" class="row list-row ${active ? "row--active" : ""}" data-paystub-id="${id}">
             <div class="row__left">
               <div class="row__title">${member} · ${date}</div>
               <div class="row__subtitle">net ${net} · paystub_id=${escapeHtml(id)} · document_id=${escapeHtml(p.document_id)}</div>
             </div>
             <div class="pill ${pillClass(effective)}">${escapeHtml(effective)}</div>
-          </div>
+          </button>
         `;
       }),
       "🧾 No paystubs"
@@ -498,7 +515,7 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
       <div class="kv">
         <div class="kv__item">
           <div class="kv__label">Pay date</div>
-          <div class="kv__value">${escapeHtml(p.pay_date || "—")}</div>
+          <div class="kv__value">${escapeHtml(formatDate(p.pay_date || "—"))}</div>
         </div>
         <div class="kv__item">
           <div class="kv__label">Pay period</div>
@@ -557,6 +574,10 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
       reopenBtn.addEventListener("click", async (e) => {
         const btn = e.currentTarget;
         if (btn && btn.disabled) return;
+        const confirmed = window.confirm(
+          "Reopen this payroll item into Review Queue? It will be excluded from approved-only analytics until re-approved."
+        );
+        if (!confirmed) return;
         const reason = window.prompt("Optional reopen reason (stored in audit log):", "") || "";
         if (btn) {
           btn.disabled = true;

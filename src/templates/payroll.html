@@ -5,7 +5,7 @@
   <div class="page-subtitle">Browse paystubs by member and status</div>
 </header>
 
-<div id="payroll-status"></div>
+<div id="payroll-status" role="status" aria-live="polite"></div>
 
 <section class="grid grid--one">
   <div class="panel">
@@ -15,7 +15,7 @@
     </div>
     <div class="row" style="grid-template-columns: 1fr;">
       <div class="row__left">
-        <div class="row__title">Member</div>
+        <label class="row__title" for="payroll-member">Member</label>
         <div class="row__subtitle">
           <select id="payroll-member" class="upload__input" style="min-width: 240px;"></select>
         </div>
@@ -23,7 +23,7 @@
     </div>
     <div class="row" style="grid-template-columns: 1fr;">
       <div class="row__left">
-        <div class="row__title">Status</div>
+        <label class="row__title" for="payroll-status-filter">Status</label>
         <div class="row__subtitle">
           <select id="payroll-status-filter" class="upload__input" style="min-width: 240px;">
             <option value="">All</option>

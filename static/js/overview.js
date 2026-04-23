@@ -32,6 +32,20 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
+function formatDateTime(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return escapeHtml(raw);
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 function cssVar(name, fallback) {
   const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
   return v || fallback;
@@ -183,7 +197,7 @@ async function load() {
     recentDocsEl,
     recent.map((d) => {
       const title = escapeHtml(d.original_filename || `Document ${d.document_id}`);
-      const subtitle = `${escapeHtml(d.module_owner)} · ${escapeHtml(d.status)} · ${escapeHtml(d.uploaded_at)}`;
+      const subtitle = `${escapeHtml(d.module_owner)} · ${escapeHtml(d.status)} · ${escapeHtml(formatDateTime(d.uploaded_at))}`;
       return `
         <div class="row">
           <div class="row__left">
@@ -208,7 +222,7 @@ async function load() {
     pendingReviewEl,
     (pending || []).map((d) => {
       const title = escapeHtml(d.original_filename || `Document ${d.document_id}`);
-      const subtitle = `${escapeHtml(d.module_owner)} · uploaded ${escapeHtml(d.uploaded_at)}`;
+      const subtitle = `${escapeHtml(d.module_owner)} · uploaded ${escapeHtml(formatDateTime(d.uploaded_at))}`;
       return `
         <div class="row">
           <div class="row__left">

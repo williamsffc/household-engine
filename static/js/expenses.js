@@ -37,6 +37,8 @@ function cssVar(name, fallback) {
   return v || fallback;
 }
 
+const EXPLORER_LIMIT = 250;
+
 // ── Transaction explorer: month range + search (client filter) ──────────────
 
 /** @param {string} ym "YYYY-MM" */
@@ -463,7 +465,7 @@ async function refreshExplorer() {
     try {
       const path = `/api/expenses/transactions?start_date=${encodeURIComponent(
         start
-      )}&end_date=${encodeURIComponent(end)}&limit=500`;
+      )}&end_date=${encodeURIComponent(end)}&limit=${EXPLORER_LIMIT}`;
       const rows = await fetchJson(path);
       _txCache = { key, rows: Array.isArray(rows) ? rows : [] };
       const raw = _txCache.rows || [];
@@ -491,7 +493,7 @@ async function refreshExplorer() {
   const filterOn = explorerFiltersActive();
 
   if (raw.length === 0) {
-    metaEl.textContent = "0 loaded in range (max 500)";
+    metaEl.textContent = `0 loaded in range (max ${EXPLORER_LIMIT})`;
   } else if (filtered.length === raw.length && !filterOn) {
     metaEl.textContent = `${raw.length} loaded in range — all visible`;
   } else {

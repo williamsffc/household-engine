@@ -748,6 +748,14 @@ html[data-theme="dark"] .skeleton__line {
   cursor: pointer;
 }
 
+button.list-row {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--color-surface-elevated);
+}
+
 .list-row:hover {
   border-color: var(--color-border-strong);
   background: var(--color-surface);
@@ -775,6 +783,17 @@ html[data-theme="dark"] .skeleton__line {
 @media (max-width: 720px) {
   .kv {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 

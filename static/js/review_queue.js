@@ -7,6 +7,28 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
+function formatDate(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+
+function formatDateTime(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 async function fetchJson(path) {
   const res = await fetch(path, { headers: { Accept: "application/json" } });
   if (!res.ok) {
@@ -48,14 +70,7 @@ function bindListRowInteractions(listEl, selector, onActivate) {
   listEl.querySelectorAll(selector).forEach((el) => {
     if (el.dataset.bound) return;
     el.dataset.bound = "1";
-    el.setAttribute("tabindex", "0");
-    el.setAttribute("role", "button");
     el.addEventListener("click", () => onActivate(el));
-    el.addEventListener("keydown", (e) => {
-      if (e.key !== "Enter" && e.key !== " ") return;
-      e.preventDefault();
-      onActivate(el);
-    });
   });
 }
 
@@ -140,7 +155,7 @@ function renderAuditEvents(events) {
       .slice(0, 12)
       .map((e) => {
         const action = escapeHtml(prettyAuditAction(e.action));
-        const when = escapeHtml(e.created_at || "—");
+        const when = escapeHtml(formatDateTime(e.created_at || "—"));
         const actor = escapeHtml(e.actor || "—");
         const details = escapeHtml(summarizeAuditDetails(e.details || ""));
         return `
@@ -196,7 +211,7 @@ function latestDecisionSummary(auditEvents) {
   });
   if (!interesting) return null;
   const action = String(interesting.action || "");
-  const when = String(interesting.created_at || "—");
+  const when = formatDateTime(interesting.created_at || "—");
   const actor = String(interesting.actor || "—");
   const reason = extractReasonFromDetails(interesting.details);
   let label = action;
@@ -339,11 +354,11 @@ async function load() {
       items.map((d) => {
         const docId = Number(d.document_id);
         const title = escapeHtml(d.original_filename || `Document ${docId}`);
-        const subtitle = `${escapeHtml(d.module_owner)} · uploaded ${escapeHtml(d.uploaded_at)}`;
+        const subtitle = `${escapeHtml(d.module_owner)} · uploaded ${escapeHtml(formatDateTime(d.uploaded_at))}`;
         const active = selectedId === docId;
         const ocr = d.ocr_used ? "OCR" : "native";
         return `
-          <div class="row list-row ${active ? "row--active" : ""}" data-doc-id="${docId}">
+          <button type="button" class="row list-row ${active ? "row--active" : ""}" data-doc-id="${docId}">
             <div class="row__left">
               <div class="row__title">${title}</div>
               <div class="row__subtitle">${subtitle}</div>
@@ -353,7 +368,7 @@ async function load() {
               </div>
             </div>
             <div class="pill pill--review">in_review</div>
-          </div>
+          </button>
         `;
       }),
       "✅ Nothing to review"
@@ -408,7 +423,7 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
     const redacted = escapeHtml(review.redacted_text || "");
     const redactionCounts = escapeHtml(JSON.stringify(review.redaction_counts || {}));
     const paystub = review.draft_paystub || {};
-    const payDate = escapeHtml(paystub.pay_date || "—");
+    const payDate = escapeHtml(formatDate(paystub.pay_date || "—"));
     const periodStart = escapeHtml(paystub.period_start || "—");
     const periodEnd = escapeHtml(paystub.period_end || "—");
     const netPay = paystub.net_pay != null ? escapeHtml(String(paystub.net_pay)) : "—";
@@ -534,7 +549,7 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
       <div class="row">
         <div class="row__left">
           <div class="row__title">${escapeHtml(doc.original_filename || `Document ${documentId}`)}</div>
-          <div class="row__subtitle">${escapeHtml(doc.module_owner)} · status ${escapeHtml(doc.status)} · uploaded ${escapeHtml(doc.uploaded_at)} · text ${escapeHtml(doc.ocr_used ? "OCR" : "native")}</div>
+          <div class="row__subtitle">${escapeHtml(doc.module_owner)} · status ${escapeHtml(doc.status)} · uploaded ${escapeHtml(formatDateTime(doc.uploaded_at))} · text ${escapeHtml(doc.ocr_used ? "OCR" : "native")}</div>
         </div>
         <div class="pill pill--review">${escapeHtml(doc.status)}</div>
       </div>
@@ -622,6 +637,10 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
       detailEl.querySelector("#rq-approve")?.addEventListener("click", async (e) => {
         const btn = e.currentTarget;
         if (btn && btn.disabled) return;
+        const confirmed = window.confirm(
+          "Approve this draft payroll item? This will move it out of Review Queue and include it in approved-only analytics."
+        );
+        if (!confirmed) return;
         if (btn) {
           btn.disabled = true;
           btn.textContent = "Approving…";
@@ -649,6 +668,10 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
       detailEl.querySelector("#rq-reject")?.addEventListener("click", async (e) => {
         const btn = e.currentTarget;
         if (btn && btn.disabled) return;
+        const confirmed = window.confirm(
+          "Reject this draft payroll item? This will remove it from Review Queue and keep it out of approved-only analytics."
+        );
+        if (!confirmed) return;
         const reason = window.prompt("Reject reason (optional):", "") || "";
         if (btn) {
           btn.disabled = true;
