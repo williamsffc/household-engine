@@ -391,6 +391,7 @@ body {
 
 .grid--one {
   grid-template-columns: 1fr;
+  margin-bottom: 14px;
 }
 
 .card,

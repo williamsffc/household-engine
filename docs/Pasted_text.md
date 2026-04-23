@@ -1,10 +1,10 @@
-# Step 25 — Reopen / Undo Workflow for Payroll Decisions
+# Step 26 — Targeted Payroll Extraction Follow-Ups
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 24 and is now best described as:
+Household Engine is complete through Step 25 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -19,6 +19,7 @@ Household Engine is complete through Step 24 and is now best described as:
 * plus Overview household readiness strip
 * plus improved native-text payroll extraction quality
 * plus scanned-PDF OCR fallback support
+* plus controlled reopen / undo workflow for payroll decisions
 
 The app currently has:
 
@@ -40,8 +41,9 @@ The app currently has:
 * Overview readiness strip
 * better native-text payroll field and line extraction
 * OCR fallback for scanned/image-like paystubs
+* reopen workflow for mistaken payroll decisions
 
-## Step 14A–24 status
+## Step 14A–25 status
 
 Completed enough.
 
@@ -61,6 +63,7 @@ Delivered:
 * Overview readiness strip with honest household data-readiness signals
 * improved native-text payroll extraction and payroll line usefulness
 * scanned-PDF OCR fallback integrated into payroll ingest and review regeneration
+* controlled reopen path for approved/rejected payroll items
 
 ## Product rule now locked in
 
@@ -71,112 +74,117 @@ That means:
 * household cashflow and planning remain the top-level view
 * payroll and documents still belong to specific household members
 * approved payroll remains the only payroll that affects analytics/planning
-* review decisions should remain auditable and reversible in a controlled way
-* reopening a decision must preserve honesty about workflow state
+* extraction improvements must preserve review honesty and member ownership
+* reopened/OCR-backed drafts are opportunities to improve quality, not hide uncertainty
 
-## Goal of Step 25
+## Goal of Step 26
 
-Add a controlled reopen / undo workflow for payroll decisions so previously approved or rejected payroll items can be returned to review when needed.
+Make targeted, practical payroll extraction improvements based on the current weak spots that still show up in native-text and OCR-backed drafts.
 
-This should be a modest lifecycle refinement, not a broad workflow rewrite.
+This step should be selective and high-value, not a broad parser rewrite.
 
 ## Product intent
 
-Right now approve/reject is terminal.
+Now that the system supports:
 
-That is workable, but less forgiving when:
+* better native extraction
+* OCR fallback
+* reopen / re-review
 
-* OCR fallback produces noisy drafts
-* extraction quality improves after a re-ingest
-* a user approves/rejects too quickly
-* a mistake is noticed later
+the next best move is to tighten the most common extraction rough edges, especially around:
 
-This step should add a controlled way to move a payroll item back into review without weakening the overall review-driven model.
+* line classification
+* noisy OCR text patterns
+* awkward label normalization
+* partial draft usefulness
+
+The goal is better drafts, not fake certainty.
 
 ## Required outcome
 
-Add reopen / undo support with focus on:
+Improve payroll extraction in a modest, targeted way with focus on:
 
-1. reopening previously approved payroll back to review
-2. reopening previously rejected payroll back to review
-3. preserving member ownership truth
-4. preserving auditability of decisions
-5. handling analytics consequences honestly when approved payroll is reopened
-6. keeping the Review Queue / Payroll page semantics understandable
+1. better line classification for common payroll row types
+2. better cleanup/normalization of noisy extracted labels
+3. practical improvements for OCR-backed drafts where low-risk
+4. fewer obviously wrong or junk rows
+5. no regression to review honesty
+6. no regression to approval/canonical workflow
+7. no regression to member-aware payroll semantics
 
 ## Scope guidance
 
-This is a lifecycle refinement step, not a redesign of the payroll system.
+This is a targeted extraction refinement step, not a parser-platform rewrite.
 
 That means:
 
-* add a modest reopen path
-* update statuses coherently
-* preserve approval/canonical semantics
-* preserve audit trail
-* keep UI additions narrow and clear
-* do not add a full version-history system
-* do not redesign the whole review workflow
+* improve weak spots that are already visible in current drafts
+* prefer common-case wins over broad complexity
+* keep heuristics understandable
+* keep warnings/review semantics honest
+* do not start unrelated UI redesign
+* do not introduce fake confidence scoring
+* do not change approved-only analytics semantics
 
 ## Suggested focus areas
 
-### Reopen semantics
+### Line classification refinement
 
-Define the intended status transition clearly, for example:
+Improve category assignment for rows such as:
 
-* approved -> in_review / draft
-* rejected -> in_review / draft
+* taxes
+* deductions
+* regular earnings
+* reimbursements / adjustments
+* employer-specific wording that is currently miscategorized too often
 
-The reopened item should become reviewable again.
+### Label normalization
 
-### Analytics correctness
+Reduce noise from OCR/native extraction such as:
 
-If an approved payroll item is reopened:
+* duplicated punctuation
+* broken spacing
+* common OCR artifacts
+* common payroll abbreviations that can be normalized safely
 
-* it should stop counting toward approved-only analytics
-* household/per-member totals should stay truthful
+### OCR-friendly cleanup
 
-### Auditability
+Add modest improvements that help OCR-backed text without pretending OCR is perfect, for example:
 
-Reopen events should be clearly recorded.
+* filtering obvious OCR junk rows
+* handling common OCR substitutions where low-risk
+* improving matching on noisy but recoverable labels
 
-If practical, capture a simple reopen reason.
+### Review honesty
 
-### UI placement
-
-The most likely places for reopen controls are:
-
-* Payroll page detail
-* Review Queue detail for eligible items if appropriate
-
-Keep the UI modest and honest.
+Keep the draft review model intact:
+* better extraction where possible
+* still clear when rows/fields remain uncertain or missing
 
 ## Files likely involved
 
 Review first:
 
-* `src/services/review_queue.py`
-* `src/api/routes_review.py`
-* `src/api/routes_payroll.py`
-* `src/payroll/repository.py`
-* `src/templates/review_queue.html`
-* `src/templates/payroll.html`
-* `static/js/review_queue.js`
-* `static/js/payroll.js`
+* `src/payroll/ingest.py`
+* `src/payroll/normalizer.py`
+* `src/payroll/validator.py`
 
 Potentially inspect:
 
-* audit log writing
-* review payload composition
-* any queries that assume approved/rejected are terminal forever
+* OCR-related text flow in:
+  * `src/payroll/payroll_text_extract.py`
+  * `src/payroll/extractor_ocr.py`
+* current review/payload rendering in:
+  * `static/js/review_queue.js`
+  * `static/js/payroll.js`
 
 ## Deliverables for this step
 
-1. reopen / undo workflow for approved/rejected payroll decisions
-2. coherent status transitions back into review
-3. preserved audit trail
-4. truthful analytics behavior when reopened items leave approved status
-5. modest UI support where appropriate
+1. targeted payroll extraction refinements
+2. better line classification and/or label cleanup
+3. modest OCR-friendly cleanup where practical
+4. no regression to review honesty
+5. no regression to approval/canonical workflow
 6. no regression to member-aware payroll model
 
 ## Constraints
@@ -184,14 +192,15 @@ Potentially inspect:
 * keep changes incremental
 * no framework migration
 * no Tailwind rewrite
+* no full parser rewrite
+* no fake confidence scoring
 * no unrelated global redesign
-* no full history/versioning system
-* keep the system local-first and honest about workflow state
+* keep the system local-first and honest about data quality/state
 
-## What comes next after Step 25
+## What comes next after Step 26
 
-After Step 25, next work should be chosen based on the highest practical value, likely from:
+After Step 26, the next work should be chosen based on the highest practical value, likely from:
 
-* additional payroll extraction quality improvements
 * richer review artifact expansion
-* broader document-quality refinements
+* additional payroll-quality refinement
+* command-center polish based on real usage

@@ -48,6 +48,24 @@ _HEADER_LABELS = frozenset(
     }
 )
 
+# Line labels that are totals/summary rows rather than line items.
+_SUMMARY_LABEL_RE = re.compile(
+    r"(?i)^\s*(?:grand\s+total|total|totals|net\s*pay|gross\s*pay|amount\s+payable|check\s*amount)\s*$"
+)
+
+# OCR often introduces odd punctuation and separators in labels.
+_LABEL_CLEAN_REPLACEMENTS: list[tuple[str, str]] = [
+    ("\u2014", "-"),  # em dash
+    ("\u2013", "-"),  # en dash
+    ("\u2212", "-"),  # minus
+    ("\u00b7", " "),  # middle dot
+    ("\u2022", " "),  # bullet
+    ("\ufb01", "fi"),  # ligature
+    ("\ufb02", "fl"),  # ligature
+    ("|", " "),  # table separators
+    ("\ufffd", " "),  # replacement character from decoding/OCR
+]
+
 
 def _nonempty_lines(text: str) -> list[str]:
     return [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
@@ -258,8 +276,16 @@ def _infer_basic_fields_from_text(text: str) -> tuple[str | None, str | None, st
 
 
 def _normalize_line_description(raw: str) -> str:
-    s = re.sub(r"\s+", " ", (raw or "").strip())
-    return s.strip(" :.-—")
+    s = (raw or "").strip()
+    for a, b in _LABEL_CLEAN_REPLACEMENTS:
+        s = s.replace(a, b)
+    # Collapse repeated punctuation / separators commonly produced by OCR.
+    s = re.sub(r"[\t]+", " ", s)
+    s = re.sub(r"\s+", " ", s)
+    s = re.sub(r"\s*[-:]{2,}\s*", " - ", s)
+    s = re.sub(r"\s*[/]{2,}\s*", " / ", s)
+    s = s.strip(" \t:.-—_")
+    return s
 
 
 def _categorize_line(description: str) -> str:
@@ -280,10 +306,15 @@ def _categorize_line(description: str) -> str:
             "city tax",
             "oasdi",
             "withholding tax",
+            "futa",
+            "suta",
+            "unemployment",
+            "ui tax",
         )
     ):
         return "tax"
-    if " tax" in d or d.endswith("tax") or d.startswith("tax "):
+    # Match token 'tax' only (avoid false positives like 'pretax').
+    if re.search(r"(?i)\btax\b", d):
         return "tax"
     if any(
         x in d
@@ -292,6 +323,10 @@ def _categorize_line(description: str) -> str:
             "403",
             "hsa",
             "fsa",
+            "dep care",
+            "dependent care",
+            "commuter",
+            "parking",
             "health ins",
             "medical",
             "dental",
@@ -311,6 +346,9 @@ def _categorize_line(description: str) -> str:
         )
     ):
         return "deduction"
+    if any(x in d for x in ("reimburse", "reimb", "expense reimb", "per diem", "mileage")):
+        # Still treated as an earning-like inflow for draft usefulness; label remains explicit.
+        return "earning"
     if any(
         x in d
         for x in (
@@ -326,6 +364,10 @@ def _categorize_line(description: str) -> str:
             "sick",
             "holiday",
             "bereavement",
+            "shift diff",
+            "differential",
+            "retro",
+            "adjust",
             "earning",
             "wage",
             "pay",
@@ -363,6 +405,13 @@ def _parse_line_with_trailing_amounts(line: str) -> tuple[str, float, float | No
     if len(desc_n) < 3:
         return None
     if desc_n.lower() in _HEADER_LABELS:
+        return None
+    if _SUMMARY_LABEL_RE.match(desc_n):
+        return None
+    # Skip rows that look like section totals (common in both native text and OCR).
+    if re.search(r"(?i)\b(?:ytd|year\s*to\s*date)\b.*\btotal\b", desc_n):
+        return None
+    if re.search(r"(?i)\bcurrent\b.*\btotal\b", desc_n):
         return None
     if re.fullmatch(r"[\d\s$,.-]+", desc_n):
         return None

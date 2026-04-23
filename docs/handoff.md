@@ -37,10 +37,11 @@ Completed:
 * Step 22
 * Step 23
 * Step 24
+* Step 25
 
 Current active step:
 
-* Step 25 — Reopen / undo workflow for payroll decisions
+* Step 26 — Targeted payroll extraction follow-ups
 
 ## Current status
 
@@ -59,6 +60,7 @@ Household Engine is now:
 * plus Overview household readiness strip
 * plus improved native-text payroll extraction quality
 * plus scanned-PDF OCR fallback support
+* plus controlled reopen / undo workflow for payroll decisions
 
 ## What is working now
 
@@ -104,6 +106,12 @@ Household Engine is now:
 * ownership mismatch protection exists for review decisions
 * approved payroll becomes analytics-eligible
 * rejected payroll stays out of analytics
+* reopen / undo workflow now exists:
+  * approved -> in_review
+  * rejected -> in_review
+  * paystub status reset to draft on reopen
+  * reopen is audit-logged
+  * reopened approved items stop counting toward approved-only analytics
 * persisted payroll review artifacts now exist
 * persisted payroll decision metadata now exists:
   * decided_at
@@ -135,6 +143,7 @@ Household Engine is now:
 * household-vs-per-person payroll browsing exists
 * payroll status presentation is clearer across approved / rejected / in_review
 * Payroll detail shows rejection reason when present
+* Payroll detail now supports reopening approved/rejected payroll back into review
 
 ### Portfolio / planning
 
@@ -236,6 +245,7 @@ Household Engine is now:
 * `GET /api/review-queue/{document_id}`
 * `POST /api/review-queue/{document_id}/approve`
 * `POST /api/review-queue/{document_id}/reject`
+* `POST /api/review-queue/{document_id}/reopen`
 
 ### Household API
 
@@ -258,15 +268,15 @@ This is the intended model for Person-M and Person-W going forward.
 
 ## What is not implemented yet
 
-### Payroll lifecycle refinement
+### Payroll quality / next refinements
 
-* no reopen/undo workflow yet for approve/reject
-* approved/rejected payroll decisions are still terminal
+* targeted extraction follow-up work is still valuable, especially on OCR-backed or reopened drafts
+* line classification and label cleanup can still improve further
 
-### Later quality refinements
+### Later refinement opportunities
 
-* additional payroll extraction quality work may still be useful
 * richer review artifact expansion may still be useful
+* additional command-center polish may still be useful
 
 ### Deferred advanced items
 
@@ -280,10 +290,13 @@ This is the intended model for Person-M and Person-W going forward.
 
 Proceed with:
 
-* Step 25 — Reopen / undo workflow for payroll decisions
+* Step 26 — Targeted payroll extraction follow-ups
 
 ## Important current truth
 
-The payroll pipeline is now stronger on both native-text and scanned/image-like documents.
+The payroll workflow is now both stronger and more forgiving:
+- better native extraction
+- OCR fallback
+- reopen/undo support
 
-The next best move is to add a controlled reopen path so mistaken approvals/rejections can be corrected without weakening the review-driven model.
+The next best move is to sharpen extraction weak spots that still show up in reopened or OCR-backed drafts, without turning the system into a heavy parser platform.
