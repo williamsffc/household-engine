@@ -2,7 +2,7 @@
 {% block content %}
 <header class="page-header">
   <h1 class="page-title">Payroll</h1>
-  <div class="page-subtitle">Browse and examine paystubs across members and statuses</div>
+  <div class="page-subtitle">Browse paystubs by member and status</div>
 </header>
 
 <div id="payroll-status"></div>
@@ -11,7 +11,7 @@
   <div class="panel">
     <div class="panel__header">
       <div class="panel__title">View</div>
-      <div class="panel__meta">Household rollup vs per-person browsing</div>
+      <div class="panel__meta">Household vs member</div>
     </div>
     <div class="row" style="grid-template-columns: 1fr;">
       <div class="row__left">
@@ -37,7 +37,7 @@
     <div class="callout callout--info">
       <div class="callout__title">Draft vs approved</div>
       <div class="callout__body">
-        Approved payroll is canonical and eligible for analytics. Draft payroll appears here for examination, but is typically handled in <a href="/review-queue">Review Queue</a>.
+        Approved payroll is analytics‑eligible. Draft payroll is usually handled in <a href="/review-queue">Review Queue</a>.
       </div>
     </div>
   </div>
@@ -54,7 +54,7 @@
 
   <div class="panel">
     <div class="panel__header">
-      <div class="panel__title">Paystub detail</div>
+      <div class="panel__title">Details</div>
       <div class="panel__meta" id="payroll-detail-meta"></div>
     </div>
     <div id="payroll-detail" class="table"></div>

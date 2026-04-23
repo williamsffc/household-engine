@@ -121,7 +121,7 @@ function renderCards(summary) {
     <div class="card">
       <div class="card__label">Available for allocation</div>
       <div class="card__value">${money(est.available_for_allocation)}</div>
-      <div class="card__hint">${availOk ? "Only when approved payroll exists" : "Unavailable until approved payroll exists"}</div>
+        <div class="card__hint">${availOk ? "Approved payroll only" : "Needs approved payroll"}</div>
     </div>
     <div class="card">
       <div class="card__label">Available for trading</div>
@@ -149,7 +149,7 @@ function renderExplain(summary) {
     <div class="callout callout--info">
       <div class="callout__title">Availability</div>
       <div class="callout__body">
-        ${availability.ok ? "Available: approved payroll exists." : escapeHtml(availability.reason || "Unavailable.")}
+        ${availability.ok ? "Available" : escapeHtml(availability.reason || "Unavailable")}
       </div>
     </div>
   `;
@@ -286,7 +286,7 @@ async function load(params) {
 
     const availability = summary?.availability || {};
     if (!availability.ok) {
-      setBanner("warning", "Portfolio planning is limited", availability.reason || "Approved payroll is required.");
+      setBanner("warning", "Planning limited", availability.reason || "Needs approved payroll.");
     }
   } catch (e) {
     setBanner("error", "Portfolio unavailable", e.message || String(e));

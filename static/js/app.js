@@ -56,12 +56,62 @@
     const navBtn = document.getElementById("nav-toggle");
     const backdrop = document.getElementById("sidebar-backdrop");
     const sidebar = document.getElementById("sidebar");
+    const main = document.querySelector(".main");
+    const themeBtn = document.getElementById("theme-toggle");
+
+    let _prevFocus = null;
+
+    function getFocusableInSidebar() {
+      if (!sidebar) return [];
+      const nodes = Array.from(
+        sidebar.querySelectorAll(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      return nodes.filter((el) => {
+        const style = window.getComputedStyle(el);
+        return style && style.visibility !== "hidden" && style.display !== "none";
+      });
+    }
 
     function setNavOpen(open) {
       document.documentElement.classList.toggle("nav-open", Boolean(open));
       if (navBtn) {
         navBtn.setAttribute("aria-expanded", open ? "true" : "false");
         navBtn.setAttribute("aria-label", open ? "Close navigation" : "Open navigation");
+      }
+
+      // Make background non-interactive while drawer is open.
+      // `inert` is supported by modern browsers; fallback is handled by focus trap.
+      if (main) {
+        try {
+          main.inert = Boolean(open);
+        } catch {
+          // ignore
+        }
+        if (open) main.setAttribute("aria-hidden", "true");
+        else main.removeAttribute("aria-hidden");
+      }
+      if (themeBtn) {
+        if (open) {
+          themeBtn.setAttribute("disabled", "true");
+          themeBtn.setAttribute("aria-hidden", "true");
+        } else {
+          themeBtn.removeAttribute("disabled");
+          themeBtn.removeAttribute("aria-hidden");
+        }
+      }
+
+      if (open) {
+        _prevFocus = document.activeElement;
+      } else if (navBtn && isSmallScreen()) {
+        // Return focus to the menu toggle for predictable keyboard flow.
+        try {
+          navBtn.focus();
+        } catch {
+          // ignore
+        }
+        _prevFocus = null;
       }
     }
 
@@ -73,7 +123,7 @@
       const open = document.documentElement.classList.contains("nav-open");
       setNavOpen(!open);
       if (!open && sidebar) {
-        const firstLink = sidebar.querySelector("a");
+        const firstLink = getFocusableInSidebar()[0] || sidebar.querySelector("a");
         if (firstLink && typeof firstLink.focus === "function") firstLink.focus();
       }
     }
@@ -93,6 +143,30 @@
     // Escape closes drawer.
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") setNavOpen(false);
+      // Focus trap while nav drawer is open.
+      if (e.key === "Tab" && document.documentElement.classList.contains("nav-open") && isSmallScreen()) {
+        const focusables = getFocusableInSidebar();
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+        const shift = Boolean(e.shiftKey);
+        const isInSidebar = sidebar && active && sidebar.contains(active);
+        if (!isInSidebar) {
+          e.preventDefault();
+          first.focus();
+          return;
+        }
+        if (!shift && active === last) {
+          e.preventDefault();
+          first.focus();
+          return;
+        }
+        if (shift && active === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      }
     });
 
     // If we leave small-screen, ensure drawer isn't stuck open.

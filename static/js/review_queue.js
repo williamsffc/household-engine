@@ -90,7 +90,7 @@ function setBanner(kind, title, message) {
   const bannerClass = kind === "error" ? "banner--error" : kind === "success" ? "banner--success" : "banner--warning";
   el.innerHTML = `
     <div class="banner ${bannerClass}">
-      <div class="banner__title">${escapeHtml(title || "Review Queue")}</div>
+      <div class="banner__title">${escapeHtml(title || "Review")}</div>
       <div class="banner__body">${escapeHtml(message || "Unknown error")}</div>
     </div>
   `;
@@ -134,7 +134,7 @@ async function loadHouseholdMembers() {
 
 function renderAuditEvents(events) {
   const rows = Array.isArray(events) ? events : [];
-  if (!rows.length) return `<div class="panel__empty">No recent lifecycle events found.</div>`;
+  if (!rows.length) return `<div class="panel__empty">No recent events.</div>`;
   return `<div class="table">
     ${rows
       .slice(0, 12)
@@ -222,20 +222,20 @@ async function load() {
       _uploadMounted = true;
       window.HE.mountUploadSurface(uploadHost, {
         title: "Upload payroll document",
-        help: "Upload a paystub (PDF or image) to create a draft for review. Draft payroll does not affect analytics until approved.",
+        help: "Upload a paystub (PDF or image). Draft payroll doesn’t affect analytics until approved.",
         moduleOwner: "payroll",
         accept: ".pdf,.png,.jpg,.jpeg",
         extraFieldsHtml: `
           <div class="upload__field">
-            <div class="upload__label">Household member (required)</div>
+            <div class="upload__label">Member (required)</div>
             <select class="upload__input" id="payroll-member-id" style="min-width:240px;"></select>
-            <div class="upload__label" id="payroll-member-hint">Select who this paystub belongs to.</div>
+            <div class="upload__label" id="payroll-member-hint">Who is this paystub for?</div>
           </div>
           <div class="upload__field">
             <div class="upload__label">After upload</div>
             <label class="upload__label" style="display:flex; gap:8px; align-items:center;">
               <input type="checkbox" id="payroll-auto-ingest" checked />
-              Run draft ingest (moves document to in_review)
+              Run draft ingest (moves to <code>in_review</code>)
             </label>
           </div>
         `,
@@ -289,7 +289,7 @@ async function load() {
             const opt = sel.options && sel.selectedIndex >= 0 ? sel.options[sel.selectedIndex] : null;
             const name = opt && v ? String(opt.textContent || "").split(" (id=")[0] : "";
             if (hint) {
-              hint.textContent = v ? `Uploading for: ${name || `member_id=${v}`}` : "Select who this paystub belongs to.";
+              hint.textContent = v ? `For: ${name || `member_id=${v}`}` : "Who is this paystub for?";
             }
             if (v) _safeLocalStorageSet("he-payroll-upload-member-id", v);
           };
@@ -326,7 +326,7 @@ async function load() {
     try {
       items = await fetchJson("/api/review-queue");
     } catch (e) {
-      setBanner("error", "Review Queue unavailable", e.message || String(e));
+      setBanner("error", "Review unavailable", e.message || String(e));
       items = [];
     }
 
@@ -356,7 +356,7 @@ async function load() {
           </div>
         `;
       }),
-      "No pending review items."
+      "Nothing to review"
     );
 
     // click behavior
@@ -443,20 +443,20 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
     if (lines.length === 0) {
       lineDetailCallout = `
         <div class="callout callout--info">
-          <div class="callout__title">No line detail extracted</div>
-          <div class="callout__body">This draft has no stored line items yet. Review may rely more on paystub fields and the original document text.</div>
+          <div class="callout__title">No line items</div>
+          <div class="callout__body">No line items extracted. Check fields against the original.</div>
         </div>`;
     } else if (lines.length < 3) {
       lineDetailCallout = `
         <div class="callout callout--info">
-          <div class="callout__title">Line detail is limited</div>
-          <div class="callout__body">Only ${escapeHtml(String(lines.length))} line item(s) were extracted. Totals may require closer review.</div>
+          <div class="callout__title">Limited line items</div>
+          <div class="callout__body">Only ${escapeHtml(String(lines.length))} extracted. Check totals.</div>
         </div>`;
     } else if (lines.length >= 40) {
       lineDetailCallout = `
         <div class="callout callout--info">
-          <div class="callout__title">Line detail may be noisy</div>
-          <div class="callout__body">${escapeHtml(String(lines.length))} lines were extracted. Large tables sometimes include extra rows; skim for obvious junk before deciding.</div>
+          <div class="callout__title">Noisy line items</div>
+          <div class="callout__body">${escapeHtml(String(lines.length))} extracted. Skim for junk rows.</div>
         </div>`;
     }
 
@@ -509,7 +509,7 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
         <div class="row" style="grid-template-columns: 1fr;">
           <div class="row__left">
             <div class="row__title">Latest decision</div>
-            <div class="row__subtitle">No approve/reject/reopen event recorded yet.</div>
+            <div class="row__subtitle">No decision yet.</div>
           </div>
           <div class="pill pill--muted">—</div>
         </div>
@@ -562,13 +562,13 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
                 <div class="row__subtitle" style="display:flex; gap:10px; flex-wrap:wrap; margin-top:6px;">
                   <button class="icon-button icon-button--primary" id="rq-approve" type="button">Approve</button>
                   <button class="icon-button icon-button--danger" id="rq-reject" type="button">Reject</button>
-                  <span style="color:var(--color-text-muted);">Draft payroll does not affect analytics until approved.</span>
+                  <span style="color:var(--color-text-muted);">Draft payroll is excluded until approved.</span>
                 </div>
               </div>
             </div>
           `
           : `
-            <div class="panel__empty">This item is not eligible for approve/reject (status must be in_review + draft).</div>
+            <div class="panel__empty">Not eligible (must be <code>in_review</code> + draft).</div>
           `
       }
 
@@ -629,11 +629,11 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
         try {
           await postJson(`/api/review-queue/${documentId}/approve`, {});
           setParam("document_id", null);
-          flashBanner("success", "Approved", "Decision recorded. This item moved out of Review Queue.");
+          flashBanner("success", "Approved", "Moved out of Review Queue.");
           await load();
         } catch (e) {
           if (Number(e?.status) === 409) {
-            flashBanner("warning", "Already decided", "This item’s state changed (or was already decided). Refreshing to backend truth…");
+            flashBanner("warning", "Already decided", "State changed. Refreshing…");
             setParam("document_id", null);
             await load();
           } else {
@@ -657,11 +657,11 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
         try {
           await postJson(`/api/review-queue/${documentId}/reject`, reason.trim() ? { reason: reason.trim() } : {});
           setParam("document_id", null);
-          flashBanner("success", "Rejected", "Decision recorded. This item moved out of Review Queue.");
+          flashBanner("success", "Rejected", "Moved out of Review Queue.");
           await load();
         } catch (e) {
           if (Number(e?.status) === 409) {
-            flashBanner("warning", "Already decided", "This item’s state changed (or was already decided). Refreshing to backend truth…");
+            flashBanner("warning", "Already decided", "State changed. Refreshing…");
             setParam("document_id", null);
             await load();
           } else {

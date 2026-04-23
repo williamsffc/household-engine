@@ -118,7 +118,7 @@ async function load() {
   const warnPartial = () => {
     partialFailures += 1;
     if (partialFailures === 1) {
-      setBanner("warning", "Some expenses data is unavailable", "Some widgets could not load. Showing what’s available.");
+      setBanner("warning", "Some data unavailable", "Showing what’s available.");
     }
   };
 
@@ -161,7 +161,7 @@ async function load() {
         </div>
       `;
     }),
-    "No category data yet."
+    "No categories"
   );
 
   // Recent expense activity.
@@ -188,7 +188,7 @@ async function load() {
         </div>
       `;
     }),
-    "No recent expenses yet."
+    "No recent transactions"
   );
 
   // Monthly trend chart.

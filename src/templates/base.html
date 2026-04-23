@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="/static/css/app.css?v=26" />
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
     <div class="app-shell">
       <header class="topbar">
         <button
@@ -73,6 +74,7 @@
         <div id="sidebar-backdrop" class="sidebar-backdrop" aria-hidden="true"></div>
 
         <main class="main">
+          <div id="main-content" tabindex="-1"></div>
           {% block content %}{% endblock %}
         </main>
       </div>

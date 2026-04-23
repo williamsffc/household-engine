@@ -216,7 +216,7 @@ async function loadMembers(selectEl) {
 
 function renderAuditEvents(events) {
   const rows = Array.isArray(events) ? events : [];
-  if (!rows.length) return `<div class="panel__empty">No recent lifecycle events found.</div>`;
+  if (!rows.length) return `<div class="panel__empty">No recent events.</div>`;
   return `<div class="table">
     ${rows
       .slice(0, 12)
@@ -315,7 +315,7 @@ async function load() {
           </div>
         `;
       }),
-      "No payroll paystubs found for the selected view."
+      "No paystubs"
     );
 
     bindListRowInteractions(listEl, "[data-paystub-id]", async (el) => {
@@ -334,8 +334,8 @@ async function load() {
     }
   } catch (e) {
     setBanner("error", "Payroll unavailable", e.message || String(e));
-    renderRows(listEl, [], "No payroll paystubs.");
-    renderRows(detailEl, [], "No paystub selected.");
+    renderRows(listEl, [], "No paystubs");
+    renderRows(detailEl, [], "Select a paystub");
     if (metaEl) metaEl.textContent = "";
     if (detailMetaEl) detailMetaEl.textContent = "";
   }
@@ -379,20 +379,20 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
     if (lines.length === 0) {
       lineHint = `
         <div class="callout callout--info">
-          <div class="callout__title">Line detail is missing</div>
-          <div class="callout__body">No payroll lines are stored for this paystub yet. Totals may require closer review.</div>
+          <div class="callout__title">No line items</div>
+          <div class="callout__body">No line items stored yet. Check totals.</div>
         </div>`;
     } else if (lines.length < 3) {
       lineHint = `
         <div class="callout callout--info">
-          <div class="callout__title">Line detail is limited</div>
-          <div class="callout__body">Only ${escapeHtml(String(lines.length))} line item(s) are stored. Totals may require closer review.</div>
+          <div class="callout__title">Limited line items</div>
+          <div class="callout__body">Only ${escapeHtml(String(lines.length))} stored. Check totals.</div>
         </div>`;
     } else if (lines.length >= 40) {
       lineHint = `
         <div class="callout callout--info">
-          <div class="callout__title">Line detail may be noisy</div>
-          <div class="callout__body">${escapeHtml(String(lines.length))} lines are stored. Large tables sometimes include extra rows; skim for obvious junk.</div>
+          <div class="callout__title">Noisy line items</div>
+          <div class="callout__body">${escapeHtml(String(lines.length))} stored. Skim for junk rows.</div>
         </div>`;
     }
 
@@ -415,7 +415,7 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
         <div class="row" style="grid-template-columns: 1fr;">
           <div class="row__left">
             <div class="row__title">Latest decision</div>
-            <div class="row__subtitle">No approve/reject/reopen event recorded yet.</div>
+            <div class="row__subtitle">No decision yet.</div>
           </div>
           <div class="pill pill--muted">—</div>
         </div>
@@ -472,7 +472,7 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
             <div class="row" style="grid-template-columns: 1fr;">
               <div class="row__left">
                 <div class="row__title">Reopen</div>
-                <div class="row__subtitle">Move this paystub back into review (removes it from approved-only analytics until re-approved).</div>
+                <div class="row__subtitle">Move back to review (excluded until re‑approved).</div>
               </div>
               <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                 <button class="icon-button" type="button" id="payroll-reopen">Reopen into Review Queue</button>
@@ -573,7 +573,7 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
             flashBanner(
               "warning",
               "Already changed",
-              "This paystub’s state changed (or was already reopened). Refreshing to backend truth…"
+              "State changed. Refreshing…"
             );
             await load();
           } else {

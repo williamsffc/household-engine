@@ -2,7 +2,7 @@
 {% block content %}
 <header class="page-header">
   <h1 class="page-title">Review Queue</h1>
-  <div class="page-subtitle">Review extracted payroll drafts and approve or reject them</div>
+  <div class="page-subtitle">Review payroll drafts. Approve or reject.</div>
 </header>
 
 <div id="rq-status"></div>
@@ -11,13 +11,13 @@
   <div class="panel">
     <div class="panel__header">
       <div class="panel__title">Upload</div>
-      <div class="panel__meta">Add a paystub to create a draft for review</div>
+      <div class="panel__meta">Add a paystub for review</div>
     </div>
     <div id="payroll-upload"></div>
     <div class="callout callout--info">
-      <div class="callout__title">What “in_review” means</div>
+      <div class="callout__title">About <code>in_review</code></div>
       <div class="callout__body">
-        Items in this queue are <b>draft payroll outputs</b>. They are not canonical and do not affect analytics until approved.
+        Items here are <b>draft payroll</b>. They don’t affect analytics until approved.
       </div>
     </div>
   </div>
@@ -26,7 +26,7 @@
 <section class="grid grid--two">
   <div class="panel">
     <div class="panel__header">
-      <div class="panel__title">Pending items</div>
+      <div class="panel__title">In review</div>
       <div class="panel__meta" id="rq-meta"></div>
     </div>
     <div class="table" id="rq-list"></div>
@@ -34,7 +34,7 @@
 
   <div class="panel">
     <div class="panel__header">
-      <div class="panel__title">Selected item</div>
+      <div class="panel__title">Details</div>
       <div class="panel__meta" id="rq-detail-meta"></div>
     </div>
     <div id="rq-detail" class="table"></div>

@@ -86,7 +86,7 @@ function readinessPillLabel(sectionKey, status, count) {
     if (status === "pending") return count === 1 ? "1 pending" : `${count} pending`;
     return "Clear";
   }
-  if (sectionKey === "planning") return status === "usable" ? "Usable" : "Limited";
+  if (sectionKey === "planning") return status === "usable" ? "OK" : "Limited";
   return status || "—";
 }
 
@@ -140,7 +140,7 @@ async function load() {
   const warnPartial = () => {
     partialFailures += 1;
     if (partialFailures === 1) {
-      setBanner("warning", "Some overview data is unavailable", "Some widgets could not load. Showing what’s available.");
+      setBanner("warning", "Some data unavailable", "Showing what’s available.");
     }
   };
 
@@ -168,7 +168,7 @@ async function load() {
 
   if (Number(summary.total_income || 0) <= 0) {
     incomeHintEl.style.display = "block";
-    incomeHintEl.textContent = "No approved payroll yet (draft paystubs are excluded).";
+    incomeHintEl.textContent = "No approved payroll yet (draft excluded).";
   } else {
     incomeHintEl.style.display = "none";
   }

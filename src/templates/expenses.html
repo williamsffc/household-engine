@@ -2,7 +2,7 @@
 {% block content %}
 <header class="page-header">
   <h1 class="page-title">Expenses</h1>
-  <div class="page-subtitle">Monthly trends, categories, and recent activity</div>
+  <div class="page-subtitle">Trends, categories, recent</div>
 </header>
 
 <div id="exp-status"></div>
@@ -11,7 +11,7 @@
   <div class="panel">
     <div class="panel__header">
       <div class="panel__title">Upload</div>
-      <div class="panel__meta">Add a new expense statement</div>
+      <div class="panel__meta">Add statement</div>
     </div>
     <div id="expenses-upload"></div>
   </div>
@@ -34,7 +34,7 @@
   <div class="card">
     <div class="card__label">Recent activity</div>
     <div class="card__value" id="exp-card-recent-count">0</div>
-    <div class="card__hint">Last 25 rows</div>
+    <div class="card__hint">Last 25</div>
   </div>
 </section>
 
@@ -45,13 +45,13 @@
       <div class="panel__meta" id="exp-monthly-meta"></div>
     </div>
     <canvas id="exp-monthly-chart" height="120"></canvas>
-    <div class="panel__empty" id="exp-monthly-empty" style="display:none;">No monthly expense data yet.</div>
+    <div class="panel__empty" id="exp-monthly-empty" style="display:none;">No monthly data yet.</div>
   </div>
 
   <div class="panel">
     <div class="panel__header">
       <div class="panel__title">Category breakdown</div>
-      <div class="panel__meta">Top categories by total</div>
+      <div class="panel__meta">Top by total</div>
     </div>
     <div class="table" id="exp-categories"></div>
   </div>
@@ -60,8 +60,8 @@
 <section class="grid grid--one">
   <div class="panel">
     <div class="panel__header">
-      <div class="panel__title">Recent expense activity</div>
-      <div class="panel__meta">Most recent transactions</div>
+      <div class="panel__title">Recent transactions</div>
+      <div class="panel__meta">Latest</div>
     </div>
     <div class="table" id="exp-recent"></div>
   </div>

@@ -2,7 +2,7 @@
 {% block content %}
 <header class="page-header">
   <h1 class="page-title">Portfolio</h1>
-  <div class="page-subtitle">Deployable surplus and modest household planning</div>
+  <div class="page-subtitle">Deployable surplus and planning</div>
 </header>
 
 <div id="portfolio-status"></div>
@@ -11,7 +11,7 @@
   <div class="panel">
     <div class="panel__header">
       <div class="panel__title">Controls</div>
-      <div class="panel__meta">Adjust estimate inputs, then recompute</div>
+      <div class="panel__meta">Adjust inputs, then recompute</div>
     </div>
     <div class="kv">
       <div class="kv__item">
@@ -28,10 +28,10 @@
       </div>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; align-items:center;">
-      <button id="portfolio-apply" class="icon-button icon-button--primary" type="button">Apply / Recompute</button>
-      <button id="portfolio-reset-defaults" class="icon-button" type="button">Reset to defaults</button>
+      <button id="portfolio-apply" class="icon-button icon-button--primary" type="button">Recompute</button>
+      <button id="portfolio-reset-defaults" class="icon-button" type="button">Reset</button>
       <span style="color:var(--color-text-muted); font-size:12px;">
-        These controls change the estimate inputs. They don’t change your underlying approved payroll or expenses data.
+        Controls only affect the estimate (not your data).
       </span>
     </div>
   </div>
@@ -44,8 +44,8 @@
 <section class="grid grid--two">
   <div class="panel">
     <div class="panel__header">
-      <div class="panel__title">What this means</div>
-      <div class="panel__meta">Honest, flow-based estimate</div>
+      <div class="panel__title">Notes</div>
+      <div class="panel__meta">Flow-based, honest</div>
     </div>
     <div id="portfolio-explain"></div>
   </div>
@@ -62,8 +62,8 @@
 <section class="grid grid--one">
   <div class="panel">
     <div class="panel__header">
-      <div class="panel__title">Recent monthly cashflow</div>
-      <div class="panel__meta">Approved payroll income only</div>
+      <div class="panel__title">Recent cashflow</div>
+      <div class="panel__meta">Approved payroll only</div>
     </div>
     <div id="portfolio-cashflow" class="table"></div>
   </div>
