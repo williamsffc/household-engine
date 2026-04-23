@@ -100,6 +100,31 @@ async function loadHouseholdMembers() {
   return await fetchJson("/api/household/members");
 }
 
+function renderAuditEvents(events) {
+  const rows = Array.isArray(events) ? events : [];
+  if (!rows.length) return `<div class="panel__empty">No recent lifecycle events found.</div>`;
+  return `<div class="table">
+    ${rows
+      .slice(0, 12)
+      .map((e) => {
+        const action = escapeHtml(e.action || "—");
+        const when = escapeHtml(e.created_at || "—");
+        const actor = escapeHtml(e.actor || "—");
+        const details = escapeHtml(e.details || "");
+        return `
+          <div class="row">
+            <div class="row__left">
+              <div class="row__title">${action}</div>
+              <div class="row__subtitle">${when} · ${actor}${details ? ` · ${details}` : ""}</div>
+            </div>
+            <div class="pill pill--muted">audit</div>
+          </div>
+        `;
+      })
+      .join("")}
+  </div>`;
+}
+
 async function load() {
   if (_loading) return;
   _loading = true;
@@ -346,6 +371,28 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
         </div>`;
     }
 
+    const artifactMeta = review.artifact_meta || {};
+    const artifactMetaHtml = `
+      <div class="row" style="grid-template-columns: 1fr;">
+        <div class="row__left">
+          <div class="row__title">Review artifact</div>
+          <div class="row__subtitle">
+            source ${escapeHtml(String(artifactMeta.source || "—"))} · text_chars ${escapeHtml(String(artifactMeta.text_chars ?? "—"))} · ocr_used_for_review ${escapeHtml(String(artifactMeta.ocr_used_for_review ?? "—"))}
+          </div>
+        </div>
+      </div>
+    `;
+
+    const auditHtml = `
+      <div class="row" style="grid-template-columns: 1fr;">
+        <div class="row__left">
+          <div class="row__title">Recent lifecycle</div>
+          <div class="row__subtitle">Most recent audit log events for this document</div>
+        </div>
+      </div>
+      ${renderAuditEvents(review.audit_events)}
+    `;
+
     detailEl.innerHTML = `
       <div class="row">
         <div class="row__left">
@@ -358,6 +405,10 @@ async function loadDetail(documentId, detailEl, detailMetaEl) {
       ${extractionCallout}
 
       ${lineDetailCallout}
+
+      ${artifactMetaHtml}
+
+      ${auditHtml}
 
       ${
         canDecide

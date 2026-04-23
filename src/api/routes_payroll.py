@@ -68,8 +68,31 @@ def get_payroll_paystub(paystub_id: int) -> dict:
         if paystub is None:
             raise HTTPException(status_code=404, detail="Paystub not found")
         lines = list_lines_for_paystub(conn, paystub_id)
+        doc_id = paystub.get("document_id")
+        audit_events: list[dict] = []
+        if doc_id is not None:
+            rows = conn.execute(
+                """
+                SELECT id, actor, action, details, created_at
+                FROM audit_log
+                WHERE document_id = ?
+                ORDER BY created_at DESC, id DESC
+                LIMIT 20;
+                """,
+                (int(doc_id),),
+            ).fetchall()
+            audit_events = [
+                {
+                    "id": r["id"],
+                    "actor": r["actor"],
+                    "action": r["action"],
+                    "details": r["details"],
+                    "created_at": r["created_at"],
+                }
+                for r in rows
+            ]
 
-    return {"paystub": paystub, "lines": lines}
+    return {"paystub": paystub, "lines": lines, "audit_events": audit_events}
 
 
 @router.get("/monthly")

@@ -56,6 +56,21 @@ def _extract_and_scrub_redacted_text(*, storage_path: str) -> dict[str, Any]:
     }
 
 
+def _list_audit_events_for_document(conn, *, document_id: int, limit: int = 20) -> list[dict[str, Any]]:
+    lim = max(1, min(int(limit), 50))
+    rows = conn.execute(
+        """
+        SELECT id, actor, action, details, created_at
+        FROM audit_log
+        WHERE document_id = ?
+        ORDER BY created_at DESC, id DESC
+        LIMIT ?;
+        """,
+        (int(document_id), lim),
+    ).fetchall()
+    return [{"id": r["id"], "actor": r["actor"], "action": r["action"], "details": r["details"], "created_at": r["created_at"]} for r in rows]
+
+
 class RejectRequest(BaseModel):
     reason: str | None = None
 
@@ -129,6 +144,8 @@ def get_review_payload(document_id: int) -> dict[str, Any]:
                     "source": "regenerated_on_read",
                 }
 
+        audit_events = _list_audit_events_for_document(conn, document_id=int(document_id), limit=20)
+
     # Validation warnings: best-effort parse from validation_summary JSON string.
     warnings: list[str] = []
     extraction_source: str | None = None
@@ -158,10 +175,18 @@ def get_review_payload(document_id: int) -> dict[str, Any]:
             "redacted_text": artifact.get("redacted_text") or "",
             "redaction_counts": artifact.get("redaction_counts") or {},
             "redacted_text_source": artifact.get("source") or "persisted",
+            "artifact_meta": {
+                "text_chars": artifact.get("text_chars"),
+                "ocr_used_for_review": artifact.get("ocr_used_for_review"),
+                "source": artifact.get("source"),
+                "created_at": artifact.get("created_at"),
+                "updated_at": artifact.get("updated_at"),
+            },
             "extraction_source": extraction_source,
             "validation_warnings": warnings,
             "draft_paystub": paystub,
             "draft_lines": lines,
+            "audit_events": audit_events,
         },
     }
 

@@ -1,10 +1,10 @@
-# Step 27 — OCR / Noisy-Draft Review Hints
+# Step 28 — Richer Review Artifact / Audit Surfacing
 
 Current active step.
 
 ## Context
 
-Household Engine is complete through Step 26 and is now best described as:
+Household Engine is complete through Step 27 and is now best described as:
 
 * V1-complete
 * plus selective V2-ready hardening
@@ -20,7 +20,7 @@ Household Engine is complete through Step 26 and is now best described as:
 * plus improved native-text payroll extraction quality
 * plus scanned-PDF OCR fallback support
 * plus controlled reopen / undo workflow for payroll decisions
-* plus targeted payroll extraction follow-ups
+* plus OCR / noisy-draft review hints
 
 The app currently has:
 
@@ -43,8 +43,9 @@ The app currently has:
 * better native-text payroll field and line extraction
 * OCR fallback for scanned/image-like paystubs
 * reopen workflow for mistaken payroll decisions
+* review-side OCR / sparse-line hints
 
-## Step 14A–26 status
+## Step 14A–27 status
 
 Completed enough.
 
@@ -66,6 +67,7 @@ Delivered:
 * scanned-PDF OCR fallback integrated into payroll ingest and review regeneration
 * controlled reopen path for approved/rejected payroll items
 * targeted OCR-friendly extraction cleanup and line classification improvements
+* descriptive OCR/noisy-draft hints in Review Queue and Payroll detail
 
 ## Product rule now locked in
 
@@ -76,86 +78,89 @@ That means:
 * household cashflow and planning remain the top-level view
 * payroll and documents still belong to specific household members
 * approved payroll remains the only payroll that affects analytics/planning
-* review UI should stay honest about noisy or limited extraction
-* hints should remain descriptive, not fake confidence scoring
+* review history should be more visible, but still honest and modest
+* audit surfacing should not become a full versioning system
 
-## Goal of Step 27
+## Goal of Step 28
 
-Add small, honest review-side hints for OCR-backed or suspiciously sparse/noisy payroll drafts so users can calibrate trust during review.
+Make review artifacts and audit history easier to inspect in the UI so users can better understand what happened to a payroll item over time.
 
-This should improve review clarity without changing the review model or introducing scoring.
+This should improve trust and traceability without creating a complex history product.
 
 ## Product intent
 
-Now that the system supports:
+Right now important review/audit information exists, but much of it is still hidden in backend structures:
 
-* better native-text extraction
-* OCR fallback
-* reopen / re-review
-* targeted extraction cleanup
+* approve/reject/reopen events live in audit log
+* persisted review artifacts exist
+* decision metadata exists
+* review and payroll pages show some of this, but not enough of the timeline/context
 
-the next practical improvement is to make noisy drafts easier to recognize at review time.
-
-The goal is not to predict correctness.  
-The goal is to say, in a simple and honest way:
-
-* this draft used OCR
-* this draft may be sparse/noisy
-* verify totals/lines carefully
+This step should expose the most useful parts of that history in a calm, readable way.
 
 ## Required outcome
 
-Add modest review hints with focus on:
+Improve review artifact / audit surfacing with focus on:
 
-1. OCR-backed draft visibility
-2. simple descriptive warnings when extracted line detail looks unusually sparse or noisy
-3. no fake confidence scores
-4. no regression to review honesty
-5. no regression to approval/canonical workflow
-6. no regression to member-aware payroll model
+1. better visibility into review decisions and reopen events
+2. better visibility into persisted review context where useful
+3. clearer traceability in Review Queue and/or Payroll detail
+4. no regression to workflow semantics
+5. no regression to member-aware payroll model
+6. no full version-history system
 
 ## Scope guidance
 
-This is a review-surface hinting step, not a scoring system.
+This is a modest history/traceability step, not a full audit product.
 
 That means:
 
-* use simple thresholds or descriptive signals
-* keep the messaging narrow and honest
-* surface the hint in Review Queue and/or Payroll detail if useful
-* do not invent confidence percentages
-* do not redesign the whole review UI
-* do not change approval semantics
-* do not change analytics rules
+* surface useful audit details already available
+* surface key review/decsion context in the UI
+* keep the implementation lightweight
+* do not build full diff/version history
+* do not redesign the whole review workflow
+* do not add fake timeline certainty where data is thin
 
 ## Suggested focus areas
 
-### OCR-backed hinting
+### Audit visibility
 
-If extraction_source indicates OCR, surface a clear note such as:
+Potentially surface recent lifecycle events such as:
 
-* OCR draft — verify fields carefully
+* approved
+* rejected
+* reopened
 
-### Sparse/noisy line hints
+with basic details like:
 
-If the extracted line count is unusually low or otherwise suggests limited detail, surface a small note such as:
+* when
+* actor
+* optional reason where available
 
-* line detail is limited
-* totals may require closer review
+### Review artifact visibility
+
+Potentially surface useful persisted artifact facts such as:
+
+* extraction source
+* redaction counts
+* when persisted/generated
+* whether OCR was involved
 
 ### Placement
 
-Best likely surfaces:
+Most likely useful places:
 
-* Review Queue selected-item detail
-* Payroll detail view, where useful
+* Review Queue detail
+* Payroll detail
 
-Keep the hints subtle but visible.
+Keep the history modest and readable.
 
 ## Files likely involved
 
 Review first:
 
+* `src/services/review_queue.py`
 * `src/api/routes_review.py`
 * `src/api/routes_payroll.py`
 * `static/js/review_queue.js`
@@ -164,32 +169,32 @@ Review first:
 
 Potentially inspect:
 
-* current validation_summary / extraction_source usage
-* current review payload structure
-* current payroll detail payload structure
+* audit log access patterns
+* persisted review artifact storage
+* current payloads returned for review/payroll detail
 
 ## Deliverables for this step
 
-1. honest OCR/noisy-draft review hints
-2. simple threshold-based sparse-detail hinting if practical
-3. no fake scoring/confidence
-4. no regression to review workflow
+1. richer review artifact / audit surfacing
+2. clearer visibility of approve/reject/reopen history where practical
+3. clearer visibility of useful review artifact metadata where practical
+4. no regression to workflow semantics
 5. no regression to analytics semantics
-6. no regression to current UI foundations
+6. no full version-history system
 
 ## Constraints
 
 * keep changes incremental
 * no framework migration
 * no Tailwind rewrite
-* no fake confidence scoring
+* no full timeline/versioning system
 * no unrelated global redesign
-* keep the system local-first and honest about data quality/state
+* keep the system local-first and honest about history/state
 
-## What comes next after Step 27
+## What comes next after Step 28
 
-After Step 27, next work should likely be chosen from:
+After Step 28, next work should likely be chosen from:
 
-* richer review artifact / audit surfacing
 * additional payroll extraction refinement
 * command-center polish based on real usage
+* further review-quality improvements where they prove useful

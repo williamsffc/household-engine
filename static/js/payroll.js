@@ -120,6 +120,31 @@ async function loadMembers(selectEl) {
   return members;
 }
 
+function renderAuditEvents(events) {
+  const rows = Array.isArray(events) ? events : [];
+  if (!rows.length) return `<div class="panel__empty">No recent lifecycle events found.</div>`;
+  return `<div class="table">
+    ${rows
+      .slice(0, 12)
+      .map((e) => {
+        const action = escapeHtml(e.action || "—");
+        const when = escapeHtml(e.created_at || "—");
+        const actor = escapeHtml(e.actor || "—");
+        const details = escapeHtml(e.details || "");
+        return `
+          <div class="row">
+            <div class="row__left">
+              <div class="row__title">${action}</div>
+              <div class="row__subtitle">${when} · ${actor}${details ? ` · ${details}` : ""}</div>
+            </div>
+            <div class="pill pill--muted">audit</div>
+          </div>
+        `;
+      })
+      .join("")}
+  </div>`;
+}
+
 async function load() {
   const listEl = document.getElementById("payroll-list");
   const detailEl = document.getElementById("payroll-detail");
@@ -225,6 +250,7 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
     const payload = await fetchJson(`/api/payroll/paystubs/${paystubId}`);
     const p = payload.paystub || {};
     const lines = Array.isArray(payload.lines) ? payload.lines : [];
+    const audit = Array.isArray(payload.audit_events) ? payload.audit_events : [];
     const vs = parseValidationSummary(p.validation_summary);
 
     const effective = effectiveStatusLabel(p);
@@ -284,6 +310,14 @@ async function loadDetail(paystubId, detailEl, detailMetaEl) {
 
       ${extractionHint}
       ${lineHint}
+
+      <div class="row" style="grid-template-columns: 1fr;">
+        <div class="row__left">
+          <div class="row__title">Recent lifecycle</div>
+          <div class="row__subtitle">Most recent audit log events for this document</div>
+        </div>
+      </div>
+      ${renderAuditEvents(audit)}
 
       ${
         canReopen
