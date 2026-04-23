@@ -1,36 +1,101 @@
-## Household Engine
+# Household Engine
 
-Local, privacy-first household financial command center.
+Local, privacy-first household financial command center — **FastAPI**, **SQLite**, and a small **Jinja2 + static JS** UI.
 
-### What this is
+## What it is
 
-- **Local-first** FastAPI + SQLite “Hub” with domain modules (Expenses, Payroll, Portfolio).
-- Designed to answer: **what came in**, **what went out**, and (eventually) **what surplus is deployable**.
+- A **local-first hub**: one app, one database (`household.db`), shared **document upload**, **audit logging**, and **SQL views** for analytics.
+- **Domain modules** on top of that hub: **Overview**, **Expenses**, **Payroll**, **Portfolio**, and **Review Queue** (each with HTML pages under `/` and JSON APIs under `/api/...`).
+- Aimed at answering: **what came in**, **what went out**, **what needs review**, and how **cashflow / deployable surplus** look over time.
 
-### Privacy / local-first note
+## UI routes
 
-- This repo is intended to run **locally**.
-- Uploaded documents and the local database are **ignored by default** via `.gitignore` (see `data/` and `*.db`).
-- By default, the app rejects non-loopback requests. Set `HOUSEHOLD_ALLOW_REMOTE=1` only if you intentionally want LAN access.
+| Path | Purpose |
+|------|---------|
+| `/` | Overview — monthly cashflow, expense trends, forecast-style cards, portfolio summary hooks |
+| `/expenses` | Expenses — upload (documents), ingest, monthly/category summaries, **transaction explorer** (range, filters, CSV export) |
+| `/payroll` | Payroll — stubs / paystub pipeline (member-scoped documents, validation, review artifacts) |
+| `/portfolio` | Portfolio — assumptions and trailing metrics (ties into overview-style data) |
+| `/review-queue` | Review queue — items pending human review |
 
-### Dev quickstart
+## API surface (high level)
 
-See `docs/architecture.md` for the full blueprint. Current implemented modules include:
+| Prefix | Role |
+|--------|------|
+| `/api/overview` | Overview analytics (cashflow, expenses series, portfolio snippets, etc.) |
+| `/api/expenses` | Monthly/category/recent summaries, **transactions** list, **ingest** for expense documents |
+| `/api/documents` | Upload and register files (`module_owner`: e.g. `expenses`, `payroll`) |
+| `/api/payroll` | Payroll ingest, validation, member-scoped flows |
+| `/api/review-queue` | Review queue read/update paths |
+| `/api/household` | Household metadata |
+| `/health` | Liveness |
 
-- **Overview**: `GET /` UI + `/api/overview/*` endpoints (cashflow, trends, forecast, portfolio summary)
-- **Expenses**: `GET /expenses` UI + `/api/expenses/*`
-- **Payroll**: draft ingest + `/api/payroll/*` (approved-only analytics views exist; approval workflow is not implemented yet)
-- **Review Queue**: `GET /review-queue` UI + `/api/review-queue/*` (read path)
+OpenAPI: `http://127.0.0.1:8000/docs` (when the server is running).
 
-### Run
+## Project layout
+
+```
+household-engine/
+├── config/              # YAML for expenses rules/categories/accounts (ingest + categorization)
+├── data/               # Runtime uploads & exports (gitignored patterns — see .gitignore)
+├── docs/               # architecture.md, handoff notes
+├── migrations/         # Ordered SQL migrations → household.db
+├── src/
+│   ├── api/            # FastAPI routers
+│   ├── core/           # DB, settings, security (local-only middleware), logging, file store
+│   ├── expenses/       # Parsers, ingest, categorizer, anomalies, repository
+│   ├── payroll/        # Normalizer, PDF/OCR extractors, validator, repository
+│   ├── services/       # Documents, audit, analytics, portfolio, review_queue, optional LLM hooks
+│   ├── models/, schemas/
+│   ├── templates/, static/
+│   └── main.py
+├── tests/
+├── requirements.txt
+└── run.py               # uvicorn dev entry (reload)
+```
+
+## Run locally
 
 ```powershell
 python -m pip install -r requirements.txt
 python -m uvicorn src.main:app --host 127.0.0.1 --port 8000
 ```
 
-Then open:
+Dev shortcut (reload on code changes):
 
-- `http://127.0.0.1:8000/` (Overview)
-- `http://127.0.0.1:8000/expenses` (Expenses)
-- `http://127.0.0.1:8000/review-queue` (Review Queue)
+```powershell
+python run.py
+```
+
+Then open **http://127.0.0.1:8000/** (Overview). Other pages: `/expenses`, `/payroll`, `/portfolio`, `/review-queue`.
+
+**Dependencies** (see `requirements.txt`): FastAPI, uvicorn, pandas, PyYAML, pdf / spreadsheet / image tooling for document pipelines.
+
+## Configuration & data
+
+- **Database**: `household.db` at the repo root (created on startup; migrations applied automatically).
+- **Expenses ingest** reads shared YAML under `config/` (`categories.yaml`, `rules.yaml`, `accounts.yaml`) — same conceptual model as a standalone recon pipeline, integrated here.
+- **Uploaded files** land under `data/` (raw / staging / processed / rejected / exports as ensured in `main.py` startup).
+
+## Privacy / local-first
+
+- Intended to run **on your machine**; uploads and the DB stay local unless you copy them elsewhere.
+- Sensitive paths are **gitignored** by default (`data/`, `*.db`, etc.).
+- **Non-loopback requests are rejected** unless you set `HOUSEHOLD_ALLOW_REMOTE=1` (use only if you intentionally want LAN access).
+
+## Testing
+
+```powershell
+python -m pytest tests/
+```
+
+Some test modules are thin placeholders; coverage grows with the modules.
+
+## Documentation
+
+- **`docs/architecture.md`** — hub-and-spoke blueprint, household vs member model, UI direction.
+- **`docs/handoff.md`** — session / handoff context when present.
+
+## Status
+
+This is **active V1 / incremental** work: behavior and schema evolve with migrations. For deeper design intent, start with `docs/architecture.md`; for code entry points, `src/main.py` and `src/api/`.
