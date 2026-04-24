@@ -80,7 +80,8 @@ class ReopenRequest(BaseModel):
 
 
 @router.get("")
-def list_review_queue() -> list[dict[str, Any]]:
+def list_review_queue(limit: int = 50) -> list[dict[str, Any]]:
+    limit = max(1, min(int(limit), 50))
     with db_connection() as conn:
         rows = conn.execute(
             """
@@ -94,8 +95,10 @@ def list_review_queue() -> list[dict[str, Any]]:
                 notes
             FROM documents
             WHERE status = 'in_review'
-            ORDER BY uploaded_at DESC, id DESC;
-            """
+            ORDER BY uploaded_at DESC, id DESC
+            LIMIT ?;
+            """,
+            (limit,),
         ).fetchall()
         return [_row_to_dict(r) for r in rows]
 

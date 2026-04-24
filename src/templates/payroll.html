@@ -17,7 +17,7 @@
       <div class="row__left">
         <label class="row__title" for="payroll-member">Member</label>
         <div class="row__subtitle">
-          <select id="payroll-member" class="upload__input" style="min-width: 240px;"></select>
+          <select id="payroll-member" name="member_id" class="upload__input" style="min-width: 240px;" autocomplete="off"></select>
         </div>
       </div>
     </div>
@@ -25,7 +25,7 @@
       <div class="row__left">
         <label class="row__title" for="payroll-status-filter">Status</label>
         <div class="row__subtitle">
-          <select id="payroll-status-filter" class="upload__input" style="min-width: 240px;">
+          <select id="payroll-status-filter" name="status" class="upload__input" style="min-width: 240px;" autocomplete="off">
             <option value="">All</option>
             <option value="approved">Approved (canonical)</option>
             <option value="draft">Draft / in_review</option>

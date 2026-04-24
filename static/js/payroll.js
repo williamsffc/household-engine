@@ -7,7 +7,7 @@ function escapeHtml(s) {
     .replaceAll("'", "&#039;");
 }
 
-const PAYROLL_LIST_LIMIT = 100;
+const PAYROLL_LIST_LIMIT = 50;
 
 function formatDate(value) {
   const raw = String(value || "").trim();

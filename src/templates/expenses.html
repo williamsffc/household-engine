@@ -85,22 +85,16 @@
       <div class="panel__title">🔍 Transaction explorer</div>
     </div>
     <p class="exp-explorer__intro">
-      Pick a month range (up to 250 rows), then filter or search — all client-side.
+      Start with a month window, then narrow only if needed. Merchant, category, and amount stay visually dominant.
     </p>
-
-    <div class="exp-explorer__row exp-explorer__row--summary">
-      <div class="exp-explorer__summary" id="exp-explorer-summary" aria-live="polite"></div>
-      <div class="exp-explorer__meta" id="exp-explorer-meta">—</div>
-    </div>
-
-    <div class="exp-explorer__row exp-explorer__row--range" role="group" aria-label="Date range and search">
-      <label class="exp-explorer__field">
+    <div class="exp-explorer__toolbar" role="group" aria-label="Date range and search">
+      <label class="exp-explorer__field exp-explorer__field--compact">
         <span class="exp-explorer__label">From</span>
-        <input class="exp-explorer__input" type="month" id="exp-explorer-month-from" />
+        <input class="exp-explorer__input" type="month" id="exp-explorer-month-from" name="month_from" autocomplete="off" />
       </label>
-      <label class="exp-explorer__field">
+      <label class="exp-explorer__field exp-explorer__field--compact">
         <span class="exp-explorer__label">To</span>
-        <input class="exp-explorer__input" type="month" id="exp-explorer-month-to" />
+        <input class="exp-explorer__input" type="month" id="exp-explorer-month-to" name="month_to" autocomplete="off" />
       </label>
       <label class="exp-explorer__field exp-explorer__field--grow">
         <span class="exp-explorer__label">Search</span>
@@ -108,25 +102,38 @@
           class="exp-explorer__input"
           type="search"
           id="exp-explorer-search"
-          placeholder="Merchant, category, flags…"
+          name="search"
+          placeholder="Merchant, category, or flag…"
           autocomplete="off"
         />
       </label>
+      <div class="exp-explorer__actions">
+        <button type="button" class="exp-explorer__btn" id="exp-explorer-clear">Reset</button>
+        <button type="button" class="exp-explorer__btn exp-explorer__btn--primary" id="exp-explorer-export" title="Download visible rows as CSV">
+          Export CSV
+        </button>
+      </div>
     </div>
 
-    <div class="exp-explorer__row exp-explorer__row--filters" role="group" aria-label="Quick filters">
-      <div class="exp-explorer__filters-inner">
+    <div class="exp-explorer__statusline">
+      <div class="exp-explorer__summary" id="exp-explorer-summary" aria-live="polite"></div>
+      <div class="exp-explorer__meta" id="exp-explorer-meta">—</div>
+    </div>
+
+    <details class="exp-explorer__filters" id="exp-explorer-filters">
+      <summary class="exp-explorer__filters-summary">More filters</summary>
+      <div class="exp-explorer__filters-inner" role="group" aria-label="Quick filters">
         <label class="exp-explorer__check">
-          <input type="checkbox" id="exp-explorer-flagged" />
+          <input type="checkbox" id="exp-explorer-flagged" name="flagged_only" />
           <span>Flagged only</span>
         </label>
         <label class="exp-explorer__check">
-          <input type="checkbox" id="exp-explorer-recurring" />
+          <input type="checkbox" id="exp-explorer-recurring" name="recurring_only" />
           <span>Recurring only</span>
         </label>
         <label class="exp-explorer__field exp-explorer__field--narrow">
           <span class="exp-explorer__label">Type</span>
-          <select class="exp-explorer__input" id="exp-explorer-type">
+          <select class="exp-explorer__input" id="exp-explorer-type" name="transaction_type" autocomplete="off">
             <option value="">All</option>
             <option value="expense">Expense</option>
             <option value="fee">Fee</option>
@@ -134,26 +141,20 @@
         </label>
         <label class="exp-explorer__field exp-explorer__field--narrow">
           <span class="exp-explorer__label">Account</span>
-          <select class="exp-explorer__input" id="exp-explorer-account">
+          <select class="exp-explorer__input" id="exp-explorer-account" name="account" autocomplete="off">
             <option value="">All accounts</option>
           </select>
         </label>
         <label class="exp-explorer__field exp-explorer__field--narrow">
           <span class="exp-explorer__label">Category</span>
-          <select class="exp-explorer__input" id="exp-explorer-category">
+          <select class="exp-explorer__input" id="exp-explorer-category" name="category" autocomplete="off">
             <option value="">All categories</option>
           </select>
         </label>
-        <div class="exp-explorer__actions">
-          <button type="button" class="exp-explorer__btn" id="exp-explorer-clear">Clear filters</button>
-          <button type="button" class="exp-explorer__btn" id="exp-explorer-export" title="Download visible rows as CSV">
-            Export CSV
-          </button>
-        </div>
       </div>
-    </div>
+      <p class="exp-explorer__active" id="exp-explorer-active" hidden></p>
+    </details>
 
-    <p class="exp-explorer__active" id="exp-explorer-active" hidden></p>
     <div class="table exp-explorer__table-wrap" id="exp-explorer-table"></div>
   </div>
 </section>

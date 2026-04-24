@@ -76,6 +76,7 @@ function bindListRowInteractions(listEl, selector, onActivate) {
 
 let _uploadMounted = false;
 let _loading = false;
+const REVIEW_QUEUE_LIMIT = 50;
 
 function setParam(key, value) {
   const url = new URL(window.location.href);
@@ -243,13 +244,13 @@ async function load() {
         extraFieldsHtml: `
           <div class="upload__field">
             <div class="upload__label">Member (required)</div>
-            <select class="upload__input" id="payroll-member-id" style="min-width:240px;"></select>
+            <select class="upload__input" id="payroll-member-id" name="member_id" autocomplete="off" style="min-width:240px;"></select>
             <div class="upload__label" id="payroll-member-hint">Who is this paystub for?</div>
           </div>
           <div class="upload__field">
             <div class="upload__label">After upload</div>
             <label class="upload__label" style="display:flex; gap:8px; align-items:center;">
-              <input type="checkbox" id="payroll-auto-ingest" checked />
+              <input type="checkbox" id="payroll-auto-ingest" name="auto_ingest" checked />
               Run draft ingest (moves to <code>in_review</code>)
             </label>
           </div>
@@ -339,7 +340,7 @@ async function load() {
 
     let items = [];
     try {
-      items = await fetchJson("/api/review-queue");
+      items = await fetchJson(`/api/review-queue?limit=${REVIEW_QUEUE_LIMIT}`);
     } catch (e) {
       setBanner("error", "Review unavailable", e.message || String(e));
       items = [];

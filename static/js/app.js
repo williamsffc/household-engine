@@ -24,6 +24,12 @@
   function applyTheme(theme) {
     const t = isValidTheme(theme) ? theme : "light";
     document.documentElement.setAttribute("data-theme", t);
+    document.documentElement.style.colorScheme = t;
+
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) {
+      themeMeta.setAttribute("content", t === "dark" ? "#0b1220" : "#f5f7fb");
+    }
 
     const btn = document.getElementById("theme-toggle");
     if (btn) {
@@ -238,12 +244,12 @@
 
         <div class="upload__fields">${cfg.extraFieldsHtml || ""}</div>
 
-        <div class="upload__drop" role="button" tabindex="0" aria-label="Upload file">
+        <button type="button" class="upload__drop" aria-label="Upload file">
           <div class="upload__dropTitle">Drag & drop a file here</div>
           <div class="upload__dropSubtitle">or <span class="upload__link">choose a file</span></div>
           <div class="upload__types">${escapeHtml(cfg.accept ? `Allowed: ${cfg.accept}` : "")}</div>
-          <input class="upload__file" type="file" ${cfg.accept ? `accept="${escapeHtml(cfg.accept)}"` : ""} />
-        </div>
+          <input class="upload__file" type="file" name="file" autocomplete="off" ${cfg.accept ? `accept="${escapeHtml(cfg.accept)}"` : ""} />
+        </button>
 
         <div class="upload__status" aria-live="polite"></div>
       </div>
@@ -291,9 +297,6 @@
 
     if (drop) {
       drop.addEventListener("click", openPicker);
-      drop.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" || e.key === " ") openPicker();
-      });
 
       ["dragenter", "dragover"].forEach((ev) => {
         drop.addEventListener(ev, (e) => {

@@ -9,3 +9,5 @@ openpyxl
 pytesseract
 Pillow
 jinja2
+pytest
+httpx

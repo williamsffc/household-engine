@@ -37,7 +37,15 @@ function cssVar(name, fallback) {
   return v || fallback;
 }
 
-const EXPLORER_LIMIT = 250;
+const EXPLORER_LIMIT = 50;
+
+function formatDate(value) {
+  const raw = String(value || "").trim();
+  if (!raw) return "—";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
 
 // ── Transaction explorer: month range + search (client filter) ──────────────
 
@@ -193,22 +201,25 @@ function renderExplorerSummary(summaryEl, visibleRows) {
   });
   summaryEl.innerHTML = `
     <span class="exp-explorer__stat"><strong>${n}</strong> visible</span>
-    <span class="exp-explorer__stat exp-explorer__stat--muted">${flagged} flagged</span>
-    <span class="exp-explorer__stat exp-explorer__stat--muted">${recurring} recurring</span>
-    <span class="exp-explorer__stat exp-explorer__stat--muted">${fees} fees</span>
+    <span class="exp-explorer__stat">${flagged} flagged</span>
+    <span class="exp-explorer__stat">${recurring} recurring</span>
+    <span class="exp-explorer__stat">${fees} fees</span>
   `;
 }
 
 function updateActiveFiltersLine(activeEl) {
   if (!activeEl) return;
   const parts = describeActiveFilters();
+  const filtersWrap = document.getElementById("exp-explorer-filters");
   if (parts.length === 0) {
     activeEl.hidden = true;
     activeEl.textContent = "";
+    if (filtersWrap) filtersWrap.open = false;
     return;
   }
   activeEl.hidden = false;
   activeEl.textContent = `Filters: ${parts.join(" · ")}`;
+  if (filtersWrap) filtersWrap.open = true;
 }
 
 function exportVisibleRowsCsv(rows) {
@@ -244,7 +255,7 @@ function exportVisibleRowsCsv(rows) {
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `expenses-explorer-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.download = `expenses-explorer-${new Date().toLocaleDateString("sv-SE")}.csv`;
   a.click();
   URL.revokeObjectURL(a.href);
 }
@@ -292,33 +303,32 @@ function renderTxnTableInto(el, rows, emptyCtx) {
   }
   const head = `<table class="exp-txn-table" role="table" aria-label="Transactions">
 <thead><tr>
-  <th scope="col">Date</th>
-  <th scope="col">Type</th>
-  <th scope="col">Account</th>
   <th scope="col">Merchant</th>
-  <th scope="col">Category</th>
-  <th scope="col">Recon</th>
+  <th scope="col">Category & status</th>
   <th scope="col" class="exp-txn-table__num">Amount</th>
 </tr></thead><tbody>`;
   const body = rows
     .map((r) => {
-      const date = escapeHtml((r.transaction_date || "").toString().slice(0, 10));
+      const date = escapeHtml(formatDate(r.transaction_date));
       const tt = txnTypeNorm(r);
       const typePill =
         tt === "fee"
           ? `<span class="pill pill--fee">Fee</span>`
           : `<span class="pill pill--type-exp">Expense</span>`;
-      const acc = escapeHtml((r.account_label || "—").toString());
       const merch = escapeHtml((r.merchant_normalized || r.merchant_raw || "—").toString());
-      const sub = r.subcategory ? ` <span class="row__subtitle">/ ${escapeHtml(r.subcategory)}</span>` : "";
-      const cat = `${escapeHtml((r.category || "Uncategorized").toString())}${sub}`;
+      const acc = escapeHtml((r.account_label || "—").toString());
+      const txnLabel = tt === "fee" ? "Fee" : "Expense";
+      const merchMeta = `${date} · ${acc} · ${txnLabel}`;
+      const sub = r.subcategory ? `<div class="exp-txn-cell__sub">${escapeHtml(r.subcategory)}</div>` : "";
+      const cat = escapeHtml((r.category || "Uncategorized").toString());
       const flagged = isFlaggedRow(r);
       const rec = isRecurringRow(r);
       const flagFull = (r.flag_reason && String(r.flag_reason).trim()) ? String(r.flag_reason) : "";
-      const flagShort = flagFull ? truncateText(flagFull, 96) : "";
+      const flagShort = flagFull ? truncateText(flagFull, 72) : "";
       const badges = [
         flagged ? `<span class="pill pill--review">Flagged</span>` : "",
         rec ? `<span class="pill pill--muted">Recurring</span>` : "",
+        typePill,
       ]
         .filter(Boolean)
         .join(" ");
@@ -332,12 +342,19 @@ function renderTxnTableInto(el, rows, emptyCtx) {
           : "—";
       const amt = formatMoney(r.amount);
       return `<tr>
-  <td>${date}</td>
-  <td>${typePill}</td>
-  <td>${acc}</td>
-  <td>${merch}</td>
-  <td>${cat}</td>
-  <td class="exp-txn-table__recon">${reconInner}</td>
+  <td>
+    <div class="exp-txn-cell">
+      <div class="exp-txn-cell__title">${merch}</div>
+      <div class="exp-txn-cell__meta">${merchMeta}</div>
+    </div>
+  </td>
+  <td class="exp-txn-table__recon">
+    <div class="exp-txn-cell">
+      <div class="exp-txn-cell__title">${cat}</div>
+      ${sub}
+      ${reconInner === "—" ? "" : reconInner}
+    </div>
+  </td>
   <td class="exp-txn-table__num">${escapeHtml(amt)}</td>
 </tr>`;
     })
@@ -702,7 +719,7 @@ async function load(ingestOutcome) {
     recentEl,
     (recent || []).map((r) => {
       const title = escapeHtml(r.merchant_normalized || "Unknown");
-      const subtitle = `${escapeHtml(r.transaction_date)} · ${escapeHtml(r.category || "Uncategorized")}`;
+      const subtitle = `${escapeHtml(formatDate(r.transaction_date))} · ${escapeHtml(r.category || "Uncategorized")}`;
       return `
         <div class="row">
           <div class="row__left">

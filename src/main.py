@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -30,18 +31,19 @@ def _ensure_dirs() -> None:
         (repo_root / relative_path).mkdir(parents=True, exist_ok=True)
 
 
-app = FastAPI(title="Household Engine", version="0.1.0")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    _ensure_dirs()
+    init_db()
+    yield
+
+
+app = FastAPI(title="Household Engine", version="0.1.0", lifespan=lifespan)
 settings = get_settings()
 app.add_middleware(LocalOnlyMiddleware, allow_remote=settings.allow_remote)
 
 repo_root = get_repo_root()
 app.mount("/static", StaticFiles(directory=str(repo_root / "static")), name="static")
-
-
-@app.on_event("startup")
-def on_startup() -> None:
-    _ensure_dirs()
-    init_db()
 
 
 app.include_router(health_router)
