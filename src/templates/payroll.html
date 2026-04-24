@@ -8,24 +8,20 @@
 <div id="payroll-status" role="status" aria-live="polite"></div>
 
 <section class="grid grid--one">
-  <div class="panel">
+  <div class="panel payroll-view-panel">
     <div class="panel__header">
       <div class="panel__title">🔎 View</div>
       <div class="panel__meta">Household vs member</div>
     </div>
-    <div class="row" style="grid-template-columns: 1fr;">
-      <div class="row__left">
-        <label class="row__title" for="payroll-member">Member</label>
-        <div class="row__subtitle">
-          <select id="payroll-member" name="member_id" class="upload__input" style="min-width: 240px;" autocomplete="off"></select>
+    <div class="payroll-view">
+      <div class="payroll-view__controls">
+        <div class="payroll-view__field">
+          <label class="payroll-view__label" for="payroll-member">Member</label>
+          <select id="payroll-member" name="member_id" class="payroll-view__input" autocomplete="off"></select>
         </div>
-      </div>
-    </div>
-    <div class="row" style="grid-template-columns: 1fr;">
-      <div class="row__left">
-        <label class="row__title" for="payroll-status-filter">Status</label>
-        <div class="row__subtitle">
-          <select id="payroll-status-filter" name="status" class="upload__input" style="min-width: 240px;" autocomplete="off">
+        <div class="payroll-view__field">
+          <label class="payroll-view__label" for="payroll-status-filter">Status</label>
+          <select id="payroll-status-filter" name="status" class="payroll-view__input" autocomplete="off">
             <option value="">All</option>
             <option value="approved">Approved (canonical)</option>
             <option value="draft">Draft / in_review</option>
@@ -33,11 +29,11 @@
           </select>
         </div>
       </div>
-    </div>
-    <div class="callout callout--info">
-      <div class="callout__title">ℹ️ Draft vs approved</div>
-      <div class="callout__body">
-        Approved payroll is analytics‑eligible. Draft payroll is usually handled in <a href="/review-queue">Review Queue</a>.
+      <div class="payroll-view__note">
+        <div class="payroll-view__note-label">Decision scope</div>
+        <div class="payroll-view__note-body">
+          Approved payroll is analytics-eligible. Draft payroll is usually handled in <a href="/review-queue">Review Queue</a>.
+        </div>
       </div>
     </div>
   </div>

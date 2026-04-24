@@ -320,13 +320,18 @@ async function load() {
         const member = escapeHtml(p.member_display_name || `member_id=${p.member_id}`);
         const date = escapeHtml(formatDate(p.pay_date || "—"));
         const net = p.net_pay != null ? escapeHtml(String(p.net_pay)) : "—";
+        const documentId = escapeHtml(String(p.document_id ?? "—"));
         const effective = effectiveStatusLabel(p);
         const active = selectedId === id;
         return `
-          <button type="button" class="row list-row ${active ? "row--active" : ""}" data-paystub-id="${id}">
-            <div class="row__left">
-              <div class="row__title">${member} · ${date}</div>
-              <div class="row__subtitle">net ${net} · paystub_id=${escapeHtml(id)} · document_id=${escapeHtml(p.document_id)}</div>
+          <button type="button" class="row list-row payroll-list__row ${active ? "row--active" : ""}" data-paystub-id="${id}">
+            <div class="row__left payroll-list__main">
+              <div class="payroll-list__title">${member}</div>
+              <div class="payroll-list__meta">
+                <span>${date}</span>
+                <span>Net ${net}</span>
+              </div>
+              <div class="payroll-list__ids">paystub ${escapeHtml(id)} · document ${documentId}</div>
             </div>
             <div class="pill ${pillClass(effective)}">${escapeHtml(effective)}</div>
           </button>

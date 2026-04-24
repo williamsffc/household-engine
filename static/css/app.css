@@ -1444,3 +1444,252 @@ select.exp-explorer__input {
     min-width: 180px;
   }
 }
+
+.rq-upload {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(280px, 1.05fr);
+  gap: 14px 18px;
+  align-items: start;
+}
+
+.rq-upload__intro {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding-top: 2px;
+}
+
+.rq-upload__lede,
+.rq-upload__note {
+  margin: 0;
+}
+
+.rq-upload__lede {
+  color: var(--color-text);
+  font-size: 14px;
+  line-height: 1.45;
+  max-width: 34ch;
+}
+
+.rq-upload__note {
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  max-width: 40ch;
+}
+
+.rq-upload__surface {
+  min-width: 0;
+  padding: 12px 13px;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-elevated);
+}
+
+.rq-upload__host .upload {
+  gap: 10px;
+}
+
+.rq-upload__host .upload__fields {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  gap: 10px 12px;
+  align-items: end;
+}
+
+.rq-upload__field {
+  min-width: 0;
+}
+
+.rq-upload__field--toggle {
+  min-width: 170px;
+}
+
+.rq-upload__label {
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.rq-upload__input {
+  min-width: 0;
+  width: 100%;
+}
+
+.rq-upload__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 2px;
+  font-size: 13px;
+  color: var(--color-text);
+  user-select: none;
+}
+
+.rq-upload__toggle input {
+  accent-color: var(--color-accent);
+}
+
+.rq-upload__hint {
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.rq-upload__host .upload__drop {
+  min-height: 76px;
+  padding: 12px 13px;
+  border-radius: 12px;
+  background: var(--color-surface);
+}
+
+.rq-upload__host .upload__dropTitle {
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+.rq-upload__host .upload__dropSubtitle,
+.rq-upload__host .upload__types,
+.rq-upload__host .upload__status {
+  font-size: 12px;
+}
+
+.payroll-view-panel {
+  padding: 14px 16px;
+}
+
+.payroll-view {
+  display: grid;
+  gap: 10px;
+}
+
+.payroll-view__controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+  align-items: end;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--color-surface-elevated);
+}
+
+.payroll-view__field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.payroll-view__label {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.payroll-view__input {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.payroll-view__input:focus-visible {
+  outline: 2px solid var(--color-accent-soft);
+  outline-offset: 1px;
+}
+
+.payroll-view__note {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+
+.payroll-view__note-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--color-text);
+}
+
+.payroll-view__note-body a {
+  color: var(--color-accent);
+}
+
+.payroll-list__row {
+  align-items: center;
+  gap: 12px;
+  padding: 12px 12px;
+}
+
+.payroll-list__main {
+  gap: 4px;
+  min-width: 0;
+}
+
+.payroll-list__title {
+  color: var(--color-text);
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.payroll-list__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.payroll-list__meta span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.payroll-list__ids {
+  color: var(--color-text-subtle);
+  font-size: 11px;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 860px) {
+  .rq-upload {
+    grid-template-columns: 1fr;
+  }
+
+  .rq-upload__host .upload__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .payroll-view__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .payroll-view__note {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .payroll-list__row {
+    align-items: start;
+  }
+}

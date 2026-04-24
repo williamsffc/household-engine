@@ -237,22 +237,26 @@ async function load() {
     if (!_uploadMounted && uploadHost && window.HE && typeof window.HE.mountUploadSurface === "function") {
       _uploadMounted = true;
       window.HE.mountUploadSurface(uploadHost, {
-        title: "Upload payroll document",
-        help: "Upload a paystub (PDF or image). Draft payroll doesn’t affect analytics until approved.",
+        omitHead: true,
+        title: "",
+        help: "",
         moduleOwner: "payroll",
         accept: ".pdf,.png,.jpg,.jpeg",
+        dropTitle: "Drop paystub",
+        dropSubtitle: 'or <span class="upload__link">browse files</span>',
         extraFieldsHtml: `
-          <div class="upload__field">
-            <div class="upload__label">Member (required)</div>
-            <select class="upload__input" id="payroll-member-id" name="member_id" autocomplete="off" style="min-width:240px;"></select>
-            <div class="upload__label" id="payroll-member-hint">Who is this paystub for?</div>
+          <div class="upload__field rq-upload__field rq-upload__field--member">
+            <label class="upload__label rq-upload__label" for="payroll-member-id">Member</label>
+            <select class="upload__input rq-upload__input" id="payroll-member-id" name="member_id" autocomplete="off"></select>
+            <div class="rq-upload__hint" id="payroll-member-hint">Choose member</div>
           </div>
-          <div class="upload__field">
-            <div class="upload__label">After upload</div>
-            <label class="upload__label" style="display:flex; gap:8px; align-items:center;">
+          <div class="upload__field rq-upload__field rq-upload__field--toggle">
+            <span class="upload__label rq-upload__label">Flow</span>
+            <label class="rq-upload__toggle">
               <input type="checkbox" id="payroll-auto-ingest" name="auto_ingest" checked />
-              Run draft ingest (moves to <code>in_review</code>)
+              <span>Ingest immediately</span>
             </label>
+            <div class="rq-upload__hint">Moves to <code>in_review</code></div>
           </div>
         `,
         getExtraFields: (root) => {

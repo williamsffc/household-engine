@@ -218,6 +218,8 @@
       help: options?.help || "",
       moduleOwner: options?.moduleOwner,
       accept: options?.accept || "",
+      dropTitle: options?.dropTitle || "Drag & drop a file here",
+      dropSubtitle: options?.dropSubtitle || 'or <span class="upload__link">choose a file</span>',
       extraFieldsHtml: options?.extraFieldsHtml || "",
       getExtraFields: options?.getExtraFields || (() => ({})),
       onUploaded: options?.onUploaded || (() => {}),
@@ -245,8 +247,8 @@
         <div class="upload__fields">${cfg.extraFieldsHtml || ""}</div>
 
         <button type="button" class="upload__drop" aria-label="Upload file">
-          <div class="upload__dropTitle">Drag & drop a file here</div>
-          <div class="upload__dropSubtitle">or <span class="upload__link">choose a file</span></div>
+          <div class="upload__dropTitle">${cfg.dropTitle}</div>
+          <div class="upload__dropSubtitle">${cfg.dropSubtitle}</div>
           <div class="upload__types">${escapeHtml(cfg.accept ? `Allowed: ${cfg.accept}` : "")}</div>
           <input class="upload__file" type="file" name="file" autocomplete="off" ${cfg.accept ? `accept="${escapeHtml(cfg.accept)}"` : ""} />
         </button>
